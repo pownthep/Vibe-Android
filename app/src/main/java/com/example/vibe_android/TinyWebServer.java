@@ -491,16 +491,16 @@ public class TinyWebServer extends Thread {
 
     private void constructHeaderStream(DataOutputStream output, String size, byte[] data, String[] parts) {
         try {
-            long start = 0;
-            long end = data.length - 1;
-            if (true) {
+            int start = 0;
+            int end = data.length - 1;
+            if (parts[0] != "") {
                 SimpleDateFormat gmtFrmt = new SimpleDateFormat("E, d MMM yyyy HH:mm:ss 'GMT'", Locale.US);
                 gmtFrmt.setTimeZone(TimeZone.getTimeZone("GMT"));
                 PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(output)), false);
                 if (this.CONTENT_TYPE != null) {
                     printHeader(pw, "Content-Type", this.CONTENT_TYPE);
                 }
-                if (parts[0] != "") start = parseInt(parts[0]);
+                start = parseInt(parts[0]);
                 if (parts.length > 1) end = parseInt(parts[1]);
                 long chunkSize = (end - start) + 1;
                 Log.d("Response", "Sending partial content!");
@@ -513,7 +513,9 @@ public class TinyWebServer extends Thread {
                 printHeader(pw, "Server", SERVER_NAME);
                 pw.append("\r\n");
                 pw.flush();
-                output.write(data);
+                byte [] subArray = Arrays.copyOfRange(data, start, data.length);
+                Log.d("Data length:", "subArray length = " + subArray.length + ":Content length = "+ chunkSize);
+                output.write(subArray);
                 output.flush();
             } else {
                 //Log.d("Response", "Sending full content!");
