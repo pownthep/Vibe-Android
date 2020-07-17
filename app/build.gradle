@@ -54,7 +54,8 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     // LibVLC
-    implementation "de.mrmaffen:vlc-android-sdk:2.0.6"
+    //implementation "de.mrmaffen:vlc-android-sdk:2.0.6"
+    implementation 'com.github.masterwok:libvlc-android-sdk:3.0.13'
     // Google Lib
     implementation 'com.google.android.gms:play-services-auth:17.0.0'
     implementation 'com.google.http-client:google-http-client-gson:1.26.0'

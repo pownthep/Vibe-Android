@@ -27,11 +27,11 @@
         android:layout_gravity="top|center"
         android:layout_height="10dp" />
 
-    <FrameLayout
-        android:id="@+id/frame_surface"
+    <ImageView
+        android:id="@+id/episode_thumbnail"
         android:layout_width="match_parent"
-        android:background="@color/colorPrimaryDark"
-        android:layout_height="80dp"/>
+        android:layout_height="wrap_content"
+        android:contentDescription="episode thumbnail" />
 
 <!--    <ProgressBar-->
 <!--        android:id="@+id/progressBar2"-->
@@ -57,32 +57,29 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|right"
-        android:layout_marginTop="160dp"
         app:elevation="0dp"
         app:borderWidth="0dp"
+        app:tint="@android:color/white"
+        app:backgroundTint="@color/transparent"
         android:contentDescription="switch audio track"
-        app:fabSize="mini"
-        app:srcCompat="@drawable/ic_round_audiotrack"/>
+        app:srcCompat="@drawable/ic_round_audiotrack_white"/>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/sub_cycle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|left"
-        android:layout_marginTop="160dp"
         app:elevation="0dp"
-        app:borderWidth="2dp"
+        app:borderWidth="0dp"
+        app:tint="@android:color/white"
+        app:backgroundTint="@color/transparent"
         android:contentDescription="switch audio track"
-        app:fabSize="mini"
-        app:srcCompat="@drawable/ic_baseline_subtitles_24"/>
+        app:srcCompat="@drawable/ic_baseline_subtitles_white"/>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/play"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center|top"
-        android:layout_marginTop="160dp"
-        app:fabSize="mini"
         android:contentDescription="toggle play"
         app:srcCompat="@drawable/ic_round_play_arrow_24"/>
 

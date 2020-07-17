@@ -11,6 +11,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
@@ -21,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.vibe_android.R;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.slider.Slider;
+import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -56,6 +58,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     private FloatingActionButton togglePlay;
     private FrameLayout frame_surface;
     private ProgressBar progress;
+    private ImageView mEpisodeThumbnail;
 
 
     @Override
@@ -70,13 +73,17 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         mSurfaceSubtitles.setZOrderOnTop(true);
         subHolder = mSurfaceSubtitles.getHolder();
         subHolder.setFormat(PixelFormat.TRANSPARENT);
-        frame_surface = findViewById(R.id.frame_surface);
         togglePlay = findViewById(R.id.play);
         holder = mSurface.getHolder();
         audio = findViewById(R.id.audio_cycle);
         sub = findViewById(R.id.sub_cycle);
         slider = findViewById(R.id.slider);
-        initViews();
+        mEpisodeThumbnail = findViewById(R.id.episode_thumbnail);
+        try {
+            initViews();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
         togglePlay.setOnClickListener(view -> {
             int state = mMediaPlayer.getPlayerState();
@@ -122,14 +129,12 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                 audio.setVisibility(View.INVISIBLE);
                 sub.setVisibility(View.INVISIBLE);
                 togglePlay.setVisibility(View.INVISIBLE);
-                frame_surface.setVisibility(View.INVISIBLE);
             } else {
                 Log.d("VIBE", "Toggle control on");
                 slider.setVisibility(View.VISIBLE);
                 audio.setVisibility(View.VISIBLE);
                 sub.setVisibility(View.VISIBLE);
                 togglePlay.setVisibility(View.VISIBLE);
-                frame_surface.setVisibility(View.VISIBLE);
             }
         });
         slider.addOnSliderTouchListener(new Slider.OnSliderTouchListener() {
@@ -177,7 +182,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         }
     }
 
-    private void initViews() {
+    private void initViews() throws JSONException {
         recyclerView = findViewById(R.id.episode_recycler_view);
         recyclerView.setHasFixedSize(true);
         recyclerView.setItemViewCacheSize(20);
@@ -185,6 +190,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         recyclerView.setLayoutManager(layoutManager);
 
         ArrayList<Episode> episodeArrayList = prepareData();
+        Picasso.get().load(data.get("banner")+"").into(mEpisodeThumbnail);
         EpisodeAdapter episodeAdapter = new EpisodeAdapter(this, episodeArrayList);
         recyclerView.setAdapter(episodeAdapter);
 
@@ -253,27 +259,24 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         if (!isPortrait) {
             LayoutParams lp = mSurface.getLayoutParams();
             lp.height = LayoutParams.MATCH_PARENT;
+            ((FrameLayout.LayoutParams) mEpisodeThumbnail.getLayoutParams()).height = LayoutParams.MATCH_PARENT;
             mSurface.setLayoutParams(lp);
             recyclerView.setVisibility(View.INVISIBLE);
-            ((FrameLayout.LayoutParams) audio.getLayoutParams()).gravity = Gravity.BOTTOM | Gravity.LEFT;
-            ((FrameLayout.LayoutParams) sub.getLayoutParams()).gravity = Gravity.BOTTOM | Gravity.RIGHT;
-            ((FrameLayout.LayoutParams) togglePlay.getLayoutParams()).gravity = Gravity.BOTTOM | Gravity.CENTER;
+            ((FrameLayout.LayoutParams) togglePlay.getLayoutParams()).gravity = Gravity.CENTER | Gravity.CENTER;
+            ((FrameLayout.LayoutParams) togglePlay.getLayoutParams()).topMargin = 0;
             ((FrameLayout.LayoutParams) slider.getLayoutParams()).gravity = Gravity.BOTTOM;
-            ((FrameLayout.LayoutParams) slider.getLayoutParams()).bottomMargin = 100;
-            ((FrameLayout.LayoutParams) frame_surface.getLayoutParams()).gravity = Gravity.BOTTOM;
-            ((FrameLayout.LayoutParams) frame_surface.getLayoutParams()).topMargin = 0;
-
+            ((FrameLayout.LayoutParams) slider.getLayoutParams()).bottomMargin = 130;
         } else {
             recyclerView.setVisibility(View.VISIBLE);
-            ((FrameLayout.LayoutParams) audio.getLayoutParams()).gravity = Gravity.TOP | Gravity.LEFT;
-            ((FrameLayout.LayoutParams) sub.getLayoutParams()).gravity = Gravity.TOP | Gravity.RIGHT;
             ((FrameLayout.LayoutParams) togglePlay.getLayoutParams()).gravity = Gravity.TOP | Gravity.CENTER;
+            ((FrameLayout.LayoutParams) togglePlay.getLayoutParams()).topMargin = 200;
             ((FrameLayout.LayoutParams) slider.getLayoutParams()).gravity = Gravity.TOP;
-            ((FrameLayout.LayoutParams) frame_surface.getLayoutParams()).gravity = Gravity.TOP;
-            ((FrameLayout.LayoutParams) frame_surface.getLayoutParams()).topMargin = 410;
+            ((FrameLayout.LayoutParams) slider.getLayoutParams()).bottomMargin = 0;
+            ((FrameLayout.LayoutParams) slider.getLayoutParams()).topMargin = 430;
             LayoutParams lp = mSurface.getLayoutParams();
             lp.height = 610;
             mSurface.setLayoutParams(lp);
+            ((FrameLayout.LayoutParams) mEpisodeThumbnail.getLayoutParams()).height = 610;
         }
 
         mVideoWidth = width;
@@ -300,8 +303,8 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         subHolder.setFixedSize(mVideoWidth, mVideoHeight);
         LayoutParams lp = mSurface.getLayoutParams();
 
-        lp.width = w;
-        lp.height = isPortrait ? h : LayoutParams.MATCH_PARENT;
+        lp.width = LayoutParams.MATCH_PARENT;
+        lp.height = isPortrait ? 610 : LayoutParams.MATCH_PARENT;
 
         mSurface.setLayoutParams(lp);
         mSurfaceSubtitles.setLayoutParams(lp);
@@ -362,15 +365,18 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
      */
     private MediaPlayer.EventListener mPlayerListener = new MyPlayerListener(this);
 
-    @Override
-    public void onNewLayout(IVLCVout vout, int width, int height, int visibleWidth, int visibleHeight, int sarNum, int sarDen) {
-        if (width * height == 0)
-            return;
-        // store video size
-        mVideoWidth = width;
-        mVideoHeight = height;
-        setSize(mVideoWidth, mVideoHeight);
-    }
+
+
+
+//    @Override
+//    public void onNewLayout(IVLCVout vout, int width, int height, int visibleWidth, int visibleHeight, int sarNum, int sarDen) {
+//        if (width * height == 0)
+//            return;
+//        // store video size
+//        mVideoWidth = width;
+//        mVideoHeight = height;
+//        setSize(mVideoWidth, mVideoHeight);
+//    }
 
     @Override
     public void onSurfacesCreated(IVLCVout vout) {
@@ -380,11 +386,11 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     public void onSurfacesDestroyed(IVLCVout vout) {
     }
 
-    @Override
-    public void onHardwareAccelerationError(IVLCVout vlcVout) {
-        Log.e(TAG, "Error with hardware acceleration");
-        this.releasePlayer();
-    }
+//    @Override
+////    public void onHardwareAccelerationError(IVLCVout vlcVout) {
+////        Log.e(TAG, "Error with hardware acceleration");
+////        this.releasePlayer();
+////    }
 
     private static class MyPlayerListener implements MediaPlayer.EventListener {
         private WeakReference<PlayerActivity> mOwner;
@@ -427,6 +433,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
 
     private void download(String fileId, String fileSize) {
         //1RrCqsjCEGwy_fclfEh1-4lGO4ipydsK5
+        mEpisodeThumbnail.setVisibility(View.INVISIBLE);
         changeMediaOrCreatePlayer(Uri.parse("http://localhost:8080?id=" + fileId + "&size=" + fileSize));
         //changeMediaOrCreatePlayer(Uri.fromFile(new File(APP_DATA+ File.separator+"[1RrCqsjCEGwy_fclfEh1-4lGO4ipydsK5]-Bakemonogatari-01. Hitagi Crab, Part One")));
     }
