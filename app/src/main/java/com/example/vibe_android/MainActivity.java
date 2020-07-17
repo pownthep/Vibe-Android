@@ -12,6 +12,7 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.NavigationUI;
 
+import com.example.vibe_android.http.HttpServer;
 import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -41,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
 
     //directory
     public static String APP_DATA;
-
+    private HttpServer server;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,12 +53,13 @@ public class MainActivity extends AppCompatActivity {
 
         //Google Drive.
         requestSignIn();
+        server = new HttpServer();
+        server.start();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-
     }
 
     @Override
@@ -68,13 +70,17 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        try {
+            server.stopServer();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     protected void onStart() {
         super.onStart();
         APP_DATA = String.valueOf(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS));
-
     }
 
     @Override
@@ -95,14 +101,12 @@ public class MainActivity extends AppCompatActivity {
      */
     private void requestSignIn() {
         Log.d(TAG, "Requesting sign-in");
-
         GoogleSignInOptions signInOptions =
                 new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                         .requestEmail()
                         .requestScopes(new Scope(DriveScopes.DRIVE))
                         .build();
         GoogleSignInClient client = GoogleSignIn.getClient(this, signInOptions);
-
         // The result of the sign-in Intent is handled in onActivityResult.
         startActivityForResult(client.getSignInIntent(), REQUEST_CODE_SIGN_IN);
 

@@ -251,7 +251,7 @@ public class TinyWebServer extends Thread {
                         final String requestLocation = h1[1];
                         if (requestLocation != null) {
 
-                            processLocation(out, requestLocation, postData, parts);
+                            processLocation(out, in, requestLocation, postData, parts);
                         }
                         //System.out.println("requestLocation "+requestLocation);
                     }
@@ -265,7 +265,7 @@ public class TinyWebServer extends Thread {
 
     }
 
-    public void processLocation(DataOutputStream out, String location, String postData, String[] parts) {
+    public void processLocation(DataOutputStream out, DataInputStream in, String location, String postData, String[] parts) {
         //Log.d("Range: ", "Start="+parts[0]+",End="+parts[1]);
         String data = "";
         switch (location) {
@@ -311,7 +311,7 @@ public class TinyWebServer extends Thread {
                             //System.out.println(bytdata.length);
                             Log.d("Server", "sending video");
                             if (bytdata != null) {
-                                constructHeaderStream(out, bytdata.length + "", bytdata, parts);
+                                constructHeaderStream(out, in, bytdata.length + "", bytdata, parts);
                             } else {
                                 pageNotFound();
                             }
@@ -489,7 +489,7 @@ public class TinyWebServer extends Thread {
 
     }
 
-    private void constructHeaderStream(DataOutputStream output, String size, byte[] data, String[] parts) {
+    private void constructHeaderStream(DataOutputStream output, DataInputStream in,String size, byte[] data, String[] parts) {
         try {
             int start = 0;
             int end = data.length - 1;

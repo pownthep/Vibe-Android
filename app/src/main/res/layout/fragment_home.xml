@@ -1,16 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="?attr/actionBarSize"
-    tools:context=".ui.home.HomeFragment">
 
+    tools:context=".ui.home.HomeFragment">
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/play"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|left"
+        android:layout_margin="0dp"
+        app:backgroundTint="@color/transparent"
+        app:elevation="0dp"
+        app:borderWidth="0dp"
+        app:fabSize="mini"
+        app:tint="@color/colorPrimary"
+        android:contentDescription="toggle play"
+        app:srcCompat="@drawable/ic_round_search_24"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/card_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        />
+        android:paddingTop="?attr/actionBarSize"
+        android:paddingBottom="?attr/actionBarSize" />
+
+    <TextView
+        android:text="Home"
+        android:textStyle="bold"
+        android:textSize="20dp"
+        android:textColor="@color/colorPrimary"
+        android:layout_marginTop="9dp"
+        android:gravity="center|top"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 </RelativeLayout>

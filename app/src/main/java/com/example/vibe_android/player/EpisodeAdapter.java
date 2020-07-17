@@ -1,4 +1,4 @@
-package com.example.vibe_android.Player;
+package com.example.vibe_android.player;
 
 import android.content.Context;
 import android.view.LayoutInflater;

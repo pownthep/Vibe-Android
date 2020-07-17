@@ -16,13 +16,15 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".Player.FullscreenActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:name=".player.FullscreenActivity"
+            android:configChanges="orientation|screenSize"
             android:label="@string/title_activity_fullscreen"
             android:theme="@style/FullscreenTheme"></activity>
         <activity
-            android:name=".Player.PlayerActivity"
-            android:configChanges="orientation|screenSize" />
+            android:name=".player.PlayerActivity"
+            android:configChanges="orientation|screenSize"
+            android:theme="@style/NoActionBar.FullScreen"
+            />
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize"

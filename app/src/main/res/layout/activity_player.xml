@@ -4,44 +4,94 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="16dp">
+    >
 
     <androidx.recyclerview.widget.RecyclerView
-        android:layout_marginTop="265dp"
+        android:layout_marginTop="210dp"
         android:id="@+id/episode_recycler_view"
+        android:paddingBottom="10dp"
         android:layout_width="match_parent"
+
         android:layout_height="match_parent" />
 
     <SurfaceView
         android:id="@+id/surface"
         android:layout_width="match_parent"
-        android:layout_height="265dp" />
+        android:layout_gravity="top|center"
+        android:layout_height="wrap_content" />
+
+    <SurfaceView
+        android:id="@+id/sub_surface"
+        android:layout_width="match_parent"
+        android:background="#00FFFFFF"
+        android:layout_gravity="top|center"
+        android:layout_height="10dp" />
+
+    <FrameLayout
+        android:id="@+id/frame_surface"
+        android:layout_width="match_parent"
+        android:background="@color/colorPrimaryDark"
+        android:layout_height="80dp"/>
+
+<!--    <ProgressBar-->
+<!--        android:id="@+id/progressBar2"-->
+<!--        style="?android:attr/progressBarStyleHorizontal"-->
+<!--        android:layout_marginTop="140dp"-->
+<!--        android:progress="60"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content" />-->
 
     <com.google.android.material.slider.Slider
         android:id="@+id/slider"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:contentDescription="@string/slider_desc"
+        android:layout_gravity="center|top"
         android:value="0.0"
         android:valueFrom="0.0"
-        android:layout_marginTop="220dp"
+        android:layout_marginTop="125dp"
         android:valueTo="100.0" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/audio_cycle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|right"
-        android:layout_margin="16dp"
+        android:layout_gravity="top|right"
+        android:layout_marginTop="160dp"
+        app:elevation="0dp"
+        app:borderWidth="0dp"
         android:contentDescription="switch audio track"
+        app:fabSize="mini"
         app:srcCompat="@drawable/ic_round_audiotrack"/>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/sub_cycle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|left"
-        android:layout_margin="16dp"
+        android:layout_gravity="top|left"
+        android:layout_marginTop="160dp"
+        app:elevation="0dp"
+        app:borderWidth="2dp"
         android:contentDescription="switch audio track"
+        app:fabSize="mini"
         app:srcCompat="@drawable/ic_baseline_subtitles_24"/>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/play"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center|top"
+        android:layout_marginTop="160dp"
+        app:fabSize="mini"
+        android:contentDescription="toggle play"
+        app:srcCompat="@drawable/ic_round_play_arrow_24"/>
+
+<!--    <ProgressBar-->
+<!--        android:id="@+id/progressBar"-->
+<!--        style="?android:attr/progressBarStyle"-->
+<!--        android:layout_width="65dp"-->
+<!--        android:layout_gravity="top|center"-->
+<!--        android:layout_height="65dp" />-->
+
+
 </FrameLayout>

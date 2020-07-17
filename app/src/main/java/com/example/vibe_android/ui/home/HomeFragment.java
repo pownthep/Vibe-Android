@@ -3,23 +3,21 @@ package com.example.vibe_android.ui.home;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.WebView;
-import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-
 import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.vibe_android.AndroidVersion;
 import com.example.vibe_android.MainActivity;
-import com.example.vibe_android.Player.PlayerActivity;
 import com.example.vibe_android.R;
+import com.example.vibe_android.player.PlayerActivity;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -36,14 +34,8 @@ import java.util.ArrayList;
 public class HomeFragment extends Fragment {
 
     private HomeViewModel homeViewModel;
-    //button
-    private Button mBtLaunchActivity;
-
-    // http
-
 
     private View root;
-    private WebView myWebView;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -96,7 +88,7 @@ public class HomeFragment extends Fragment {
             return android_version;
 
         } catch (Exception e) {
-            System.out.println(e);
+            Log.d("VIBE", String.valueOf(e));
         } finally {
             return android_version;
         }
@@ -113,7 +105,7 @@ public class HomeFragment extends Fragment {
 
         private JSONArray getExternalData() {
             //String fileURL = "https://boring-northcutt-5fd361.netlify.app/full.json";
-            String fileURL = "http://192.168.1.4:5500/merged.json";
+            String fileURL = "https://data.pownthep.vercel.app/merged.json";
 
             JSONArray json = new JSONArray();
             try {
