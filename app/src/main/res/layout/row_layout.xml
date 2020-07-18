@@ -15,10 +15,11 @@
         app:cardUseCompatPadding="true">
 
         <ImageView
-            android:id="@+id/img_android"
+            android:id="@+id/show_thumbnail"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center"
+            android:contentDescription="@string/thumbnail"
             android:scaleType="fitXY" />
     </androidx.cardview.widget.CardView>
 </LinearLayout>

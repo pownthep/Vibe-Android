@@ -1,8 +1,17 @@
-package com.example.vibe_android.player;
+package com.pownthep.vibe_android.player;
 
 public class Episode {
     private String name;
     private String id;
+    private int index;
+
+    public int getIndex() {
+        return index;
+    }
+
+    public void setIndex(int index) {
+        this.index = index;
+    }
 
     public String getName() {
         return name;

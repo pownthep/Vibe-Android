@@ -1,4 +1,4 @@
-package com.example.vibe_android;
+package com.pownthep.vibe_android;
 
 import org.junit.Test;
 

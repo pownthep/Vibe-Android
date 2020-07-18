@@ -1,15 +1,15 @@
-package com.example.vibe_android.player;
+package com.pownthep.vibe_android.player;
 
-import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.vibe_android.R;
+import com.pownthep.vibe_android.R;
 import com.squareup.picasso.Picasso;
 
 
@@ -19,7 +19,6 @@ import java.util.ArrayList;
 
 public class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.ViewHolder> {
     private ArrayList<Episode> episodes;
-    private Context context;
 
     private OnCardClickListener mListener;
 
@@ -27,13 +26,17 @@ public class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.ViewHold
         void onCardClick(int position) throws JSONException;
     }
 
+    public void filterList(ArrayList<Episode> filteredList) {
+        episodes = filteredList;
+        notifyDataSetChanged();
+    }
+
     public void setOnCardClickListener(OnCardClickListener listener) {
         mListener = listener;
     }
 
-    public EpisodeAdapter(Context context, ArrayList<Episode> episodes) {
+    public EpisodeAdapter(ArrayList<Episode> episodes) {
         this.episodes = episodes;
-        this.context = context;
     }
 
     @Override
@@ -41,6 +44,7 @@ public class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.ViewHold
         return super.getItemId(position);
     }
 
+    @NonNull
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.episode_row_layout, viewGroup, false);
@@ -50,6 +54,7 @@ public class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.ViewHold
     @Override
     public void onBindViewHolder(ViewHolder viewHolder, int i) {
         viewHolder.name.setText(episodes.get(i).getName());
+        viewHolder.setIndex(episodes.get(i).getIndex());
         Picasso.get().load("https://lh3.googleusercontent.com/u/0/d/"+episodes.get(i).getId()).into(viewHolder.img);
     }
 
@@ -58,26 +63,29 @@ public class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.ViewHold
         return episodes.size();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
-        private ImageView img;
-        private TextView name;
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        private final ImageView img;
+        private final TextView name;
+
+        public void setIndex(int index) {
+            this.index = index;
+        }
+
+        private int index;
 
         public ViewHolder(View view, final OnCardClickListener listener) {
             super(view);
-            img = (ImageView) view.findViewById(R.id.thumbnail);
-            name = (TextView) view.findViewById(R.id.episode_name);
+            img = view.findViewById(R.id.thumbnail);
+            name = view.findViewById(R.id.episode_name);
 
-            img.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if (listener != null) {
-                        int position = getAdapterPosition();
-                        if (position != RecyclerView.NO_POSITION) {
-                            try {
-                                listener.onCardClick(position);
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
+            img.setOnClickListener(view1 -> {
+                if (listener != null) {
+                    int position = getAdapterPosition();
+                    if (position != RecyclerView.NO_POSITION) {
+                        try {
+                            listener.onCardClick(index);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
                         }
                     }
                 }

@@ -1,4 +1,4 @@
-package com.example.vibe_android;
+package com.pownthep.vibe_android;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -12,7 +12,7 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.NavigationUI;
 
-import com.example.vibe_android.http.HttpServer;
+import com.pownthep.vibe_android.http.HttpServer;
 import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -30,6 +30,7 @@ import java.util.Collections;
 
 public class MainActivity extends AppCompatActivity {
     public static JSONArray externalData;
+
     // Generated
     public final static String TAG = "MainActivity";
 
@@ -37,17 +38,17 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CODE_SIGN_IN = 1;
     public static String accessToken;
 
-    //nav
-    private BottomNavigationView BottomNavigationView;
-
     //directory
     public static String APP_DATA;
     private HttpServer server;
+
+    private BottomNavigationView navView;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        BottomNavigationView navView = findViewById(R.id.nav_view);
+        navView = findViewById(R.id.nav_view);
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupWithNavController(navView, navController);
 
@@ -55,16 +56,6 @@ public class MainActivity extends AppCompatActivity {
         requestSignIn();
         server = new HttpServer();
         server.start();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
     }
 
     @Override
@@ -81,16 +72,15 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         APP_DATA = String.valueOf(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS));
+        Log.d("VIBE", APP_DATA);
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
-        switch (requestCode) {
-            case REQUEST_CODE_SIGN_IN:
-                if (resultCode == Activity.RESULT_OK && resultData != null) {
-                    handleSignInResult(resultData);
-                }
-                break;
+        if (requestCode == REQUEST_CODE_SIGN_IN) {
+            if (resultCode == Activity.RESULT_OK && resultData != null) {
+                handleSignInResult(resultData);
+            }
         }
 
         super.onActivityResult(requestCode, resultCode, resultData);
@@ -126,16 +116,11 @@ public class MainActivity extends AppCompatActivity {
                             GoogleAccountCredential.usingOAuth2(
                                     this, Collections.singleton(DriveScopes.DRIVE));
                     credential.setSelectedAccount(googleAccount.getAccount());
-                    AsyncTask.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                accessToken = credential.getToken();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            } catch (GoogleAuthException e) {
-                                e.printStackTrace();
-                            }
+                    AsyncTask.execute(() -> {
+                        try {
+                            accessToken = credential.getToken();
+                        } catch (IOException | GoogleAuthException e) {
+                            e.printStackTrace();
                         }
                     });
                 })

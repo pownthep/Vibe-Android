@@ -1,23 +1,26 @@
-package com.example.vibe_android.ui.home;
+package com.pownthep.vibe_android.ui.home;
 
-import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.vibe_android.AndroidVersion;
-import com.example.vibe_android.R;
+import com.pownthep.vibe_android.R;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 
 public class DataAdapter extends RecyclerView.Adapter<DataAdapter.ViewHolder> {
-    private ArrayList<AndroidVersion> android;
-    private Context context;
+    private ArrayList<Show> shows;
     private OnCardClickListener mListener;
+
+    public void filterList(ArrayList<Show> filteredList) {
+        shows = filteredList;
+        notifyDataSetChanged();
+    }
 
     public interface OnCardClickListener {
         void onCardClick(int position);
@@ -27,9 +30,8 @@ public class DataAdapter extends RecyclerView.Adapter<DataAdapter.ViewHolder> {
         mListener = listener;
     }
 
-    public DataAdapter(Context context, ArrayList<AndroidVersion> android) {
-        this.android = android;
-        this.context = context;
+    public DataAdapter(ArrayList<Show> shows) {
+        this.shows = shows;
     }
 
     @Override
@@ -37,6 +39,7 @@ public class DataAdapter extends RecyclerView.Adapter<DataAdapter.ViewHolder> {
         return super.getItemId(position);
     }
 
+    @NonNull
     @Override
     public DataAdapter.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.row_layout, viewGroup, false);
@@ -45,28 +48,32 @@ public class DataAdapter extends RecyclerView.Adapter<DataAdapter.ViewHolder> {
 
     @Override
     public void onBindViewHolder(DataAdapter.ViewHolder viewHolder, int i) {
-        Picasso.get().load(android.get(i).getAndroid_image_url()).into(viewHolder.img_android);
+        viewHolder.setId(shows.get(i).getId());
+        Picasso.get().load(shows.get(i).getImg()).into(viewHolder.thumbnail);
     }
 
     @Override
     public int getItemCount() {
-        return android.size();
+        return shows.size();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
-        private ImageView img_android;
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        private final ImageView thumbnail;
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        private String id;
 
         public ViewHolder(View view, final OnCardClickListener listener) {
             super(view);
-            img_android = (ImageView) view.findViewById(R.id.img_android);
-            img_android.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if (listener != null) {
-                        int position = getAdapterPosition();
-                        if (position != RecyclerView.NO_POSITION) {
-                            listener.onCardClick(position);
-                        }
+            thumbnail = view.findViewById(R.id.show_thumbnail);
+            thumbnail.setOnClickListener(view1 -> {
+                if (listener != null) {
+                    int position = getAdapterPosition();
+                    if (position != RecyclerView.NO_POSITION) {
+                        listener.onCardClick(Integer.parseInt(id));
                     }
                 }
             });

@@ -8,4 +8,12 @@
     <string name="title_activity_fullscreen">FullscreenActivity</string>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="thumbnail">show thumbnail</string>
+    <string name="search_text">Search</string>
+    <string name="episode_thumbnail">episode thumbnail</string>
+    <string name="switch_audio_track">switch audio track</string>
+    <string name="toggle_play">toggle play</string>
+    <string name="title">Title</string>
+    <string name="search">Search</string>
+    <string name="episode_name">Episode Name</string>
 </resources>

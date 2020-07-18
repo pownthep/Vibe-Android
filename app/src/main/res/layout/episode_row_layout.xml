@@ -9,27 +9,31 @@
     app:cardElevation="0dp"
     app:cardUseCompatPadding="true">
 
-    <RelativeLayout
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <ImageView
             android:id="@+id/thumbnail"
+            android:foreground="@drawable/overlay"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center"
-            android:contentDescription="episode thumbnail"
+            android:contentDescription="@string/episode_thumbnail"
             android:scaleType="fitXY" />
 
         <TextView
             android:id="@+id/episode_name"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_marginLeft="10dp"
-            android:layout_marginTop="10dp"
-            style="@style/AudioFileInfoOverlayText"
-            android:text="Episode Name" />
-    </RelativeLayout>
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="130dp"
+            android:gravity="bottom"
+            android:shadowColor="@android:color/black"
+            android:text="@string/episode_name"
+            android:textColor="@color/colorPrimary"
+            android:textStyle="bold" />
+    </FrameLayout>
 
 
 </androidx.cardview.widget.CardView>

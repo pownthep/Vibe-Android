@@ -1,8 +1,11 @@
-package com.example.vibe_android.ui.home;
+package com.pownthep.vibe_android.ui.home;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,10 +17,10 @@ import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.vibe_android.AndroidVersion;
-import com.example.vibe_android.MainActivity;
-import com.example.vibe_android.R;
-import com.example.vibe_android.player.PlayerActivity;
+import com.google.android.material.textfield.TextInputEditText;
+import com.pownthep.vibe_android.MainActivity;
+import com.pownthep.vibe_android.R;
+import com.pownthep.vibe_android.player.PlayerActivity;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -28,26 +31,55 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 public class HomeFragment extends Fragment {
 
-    private HomeViewModel homeViewModel;
+    private ArrayList<Show> shows;
 
     private View root;
+    private DataAdapter adapter;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        homeViewModel =
-                ViewModelProviders.of(this).get(HomeViewModel.class);
+        HomeViewModel homeViewModel = ViewModelProviders.of(this).get(HomeViewModel.class);
         root = inflater.inflate(R.layout.fragment_home, container, false);
+
+        TextInputEditText inputText = root.findViewById(R.id.search_text);
+        inputText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                filter(editable.toString());
+            }
+        });
 
         if (MainActivity.externalData == null) new GetDataList().execute();
         else {
             initViews(MainActivity.externalData);
         }
         return root;
+    }
+
+    private void filter(String text) {
+        ArrayList<Show> filteredList = new ArrayList<>();
+
+        for (Show item : shows) {
+            if (item.getName().toLowerCase().contains(text)) filteredList.add(item);
+        }
+
+        adapter.filterList(filteredList);
+
     }
 
     private void launchActivity(int position) {
@@ -57,44 +89,39 @@ public class HomeFragment extends Fragment {
     }
 
     private void initViews(JSONArray json) {
-        RecyclerView recyclerView = (RecyclerView) root.findViewById(R.id.card_recycler_view);
+        RecyclerView recyclerView = root.findViewById(R.id.card_recycler_view);
         recyclerView.setHasFixedSize(true);
         recyclerView.setItemViewCacheSize(20);
         RecyclerView.LayoutManager layoutManager = new GridLayoutManager(getContext(), 3);
         recyclerView.setLayoutManager(layoutManager);
 
-        ArrayList<AndroidVersion> androidVersions = prepareData(json);
-        DataAdapter adapter = new DataAdapter(getContext(), androidVersions);
+        shows = prepareData(json);
+        adapter = new DataAdapter(shows);
         recyclerView.setAdapter(adapter);
 
-        adapter.setOnCardClickListener(new DataAdapter.OnCardClickListener() {
-            @Override
-            public void onCardClick(int position) {
-                launchActivity(position);
-            }
-        });
+        adapter.setOnCardClickListener(this::launchActivity);
     }
 
-    private ArrayList<AndroidVersion> prepareData(JSONArray json) {
+    private ArrayList<Show> prepareData(JSONArray json) {
 
-        ArrayList<AndroidVersion> android_version = new ArrayList<>();
+        ArrayList<Show> showsList = new ArrayList<>();
         try {
             for (int i = 0; i < json.length(); i++) {
-                AndroidVersion androidVersion = new AndroidVersion();
-                androidVersion.setAndroid_version_name(json.getJSONObject(i).get("name") + "");
-                androidVersion.setAndroid_image_url(json.getJSONObject(i).get("poster") + "");
-                android_version.add(androidVersion);
+                Show show = new Show();
+                show.setName(json.getJSONObject(i).get("name") + "");
+                show.setImg(json.getJSONObject(i).get("poster") + "");
+                show.setId(json.getJSONObject(i).get("id") + "");
+                showsList.add(show);
             }
-            return android_version;
+
 
         } catch (Exception e) {
             Log.d("VIBE", String.valueOf(e));
-        } finally {
-            return android_version;
         }
-
+        return showsList;
     }
 
+    @SuppressLint("StaticFieldLeak")
     class GetDataList extends AsyncTask<String, String, JSONArray> {
 
         @Override
@@ -104,7 +131,6 @@ public class HomeFragment extends Fragment {
         }
 
         private JSONArray getExternalData() {
-            //String fileURL = "https://boring-northcutt-5fd361.netlify.app/full.json";
             String fileURL = "https://data.pownthep.vercel.app/merged.json";
 
             JSONArray json = new JSONArray();
@@ -112,10 +138,8 @@ public class HomeFragment extends Fragment {
                 json = readJsonFromUrl(fileURL);
             } catch (Exception e) {
                 e.printStackTrace();
-            } finally {
-                return json;
             }
-
+            return json;
         }
 
         private String readAll(Reader rd) throws IOException {
@@ -128,15 +152,12 @@ public class HomeFragment extends Fragment {
         }
 
         public JSONArray readJsonFromUrl(String url) throws IOException, JSONException {
-            InputStream is = new URL(url).openStream();
-            try {
-                BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+            try (InputStream is = new URL(url).openStream()) {
+                BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
                 String jsonText = readAll(rd);
                 JSONArray json = new JSONArray(jsonText);
                 MainActivity.externalData = json;
                 return json;
-            } finally {
-                is.close();
             }
         }
 
