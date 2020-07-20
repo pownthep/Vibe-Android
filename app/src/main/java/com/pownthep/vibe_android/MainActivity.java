@@ -1,7 +1,9 @@
 package com.pownthep.vibe_android;
 
+import android.accounts.Account;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
@@ -22,14 +24,10 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.google.api.services.drive.DriveScopes;
 
-import org.json.JSONArray;
-
 import java.io.IOException;
 import java.util.Collections;
 
-
 public class MainActivity extends AppCompatActivity {
-    public static JSONArray externalData;
 
     // Generated
     public final static String TAG = "MainActivity";
@@ -42,16 +40,22 @@ public class MainActivity extends AppCompatActivity {
     public static String APP_DATA;
     private HttpServer server;
 
-    private BottomNavigationView navView;
+    public static final String SHARED_PREFS = "vibe_preferences";
+    public static final String EXTERNAL_DATA = "vibe_data";
+    public static final String CACHE_OPTION = "cache_option";
+    public static final String LIBRARY_ARRAY = "vibe_lib";
+
+    public static boolean isCacheEnabled;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        navView = findViewById(R.id.nav_view);
+        BottomNavigationView navView = findViewById(R.id.nav_view);
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupWithNavController(navView, navController);
-
+        SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
+        isCacheEnabled = sharedPreferences.getBoolean(CACHE_OPTION, true);
         //Google Drive.
         requestSignIn();
         server = new HttpServer();
@@ -72,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         APP_DATA = String.valueOf(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS));
-        Log.d("VIBE", APP_DATA);
     }
 
     @Override
@@ -126,6 +129,5 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(exception -> Log.e(TAG, "Unable to sign in.", exception));
     }
-
 }
 

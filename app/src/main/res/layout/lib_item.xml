@@ -4,8 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="170dp"
     android:layout_gravity="center"
-    android:backgroundTint="#2e2e2e"
     android:layout_margin="5dp"
+    android:backgroundTint="#2e2e2e"
     app:cardCornerRadius="5dp"
     app:cardElevation="0dp"
     app:cardUseCompatPadding="true">
@@ -15,16 +15,16 @@
         android:layout_height="match_parent">
 
         <ImageView
-            android:id="@+id/thumbnail"
+            android:id="@+id/lib__show_thumbnail"
             android:foreground="@drawable/overlay"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center"
-            android:contentDescription="@string/episode_thumbnail"
+            android:contentDescription="@string/show_thumbnail"
             android:scaleType="fitXY" />
 
         <TextView
-            android:id="@+id/episode_name"
+            android:id="@+id/lib_show_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"

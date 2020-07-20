@@ -1,8 +1,8 @@
 package com.pownthep.vibe_android.ui.home;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.os.AsyncTask;
+import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -18,21 +19,17 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.textfield.TextInputEditText;
-import com.pownthep.vibe_android.MainActivity;
 import com.pownthep.vibe_android.R;
 import com.pownthep.vibe_android.player.PlayerActivity;
+import com.pownthep.vibe_android.utils.GetDataList;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+
+import static com.pownthep.vibe_android.MainActivity.EXTERNAL_DATA;
+import static com.pownthep.vibe_android.MainActivity.SHARED_PREFS;
 
 public class HomeFragment extends Fragment {
 
@@ -40,11 +37,13 @@ public class HomeFragment extends Fragment {
 
     private View root;
     private DataAdapter adapter;
+    private ProgressBar dataLoader;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         HomeViewModel homeViewModel = ViewModelProviders.of(this).get(HomeViewModel.class);
         root = inflater.inflate(R.layout.fragment_home, container, false);
+        dataLoader = root.findViewById(R.id.data_loading);
 
         TextInputEditText inputText = root.findViewById(R.id.search_text);
         inputText.addTextChangedListener(new TextWatcher() {
@@ -63,23 +62,20 @@ public class HomeFragment extends Fragment {
                 filter(editable.toString());
             }
         });
-
-        if (MainActivity.externalData == null) new GetDataList().execute();
-        else {
-            initViews(MainActivity.externalData);
+        try {
+            loadData();
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
         return root;
     }
 
     private void filter(String text) {
         ArrayList<Show> filteredList = new ArrayList<>();
-
         for (Show item : shows) {
             if (item.getName().toLowerCase().contains(text)) filteredList.add(item);
         }
-
         adapter.filterList(filteredList);
-
     }
 
     private void launchActivity(int position) {
@@ -88,22 +84,26 @@ public class HomeFragment extends Fragment {
         startActivity(intent);
     }
 
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+    }
+
     private void initViews(JSONArray json) {
+        dataLoader.setVisibility(View.INVISIBLE);
         RecyclerView recyclerView = root.findViewById(R.id.card_recycler_view);
         recyclerView.setHasFixedSize(true);
         recyclerView.setItemViewCacheSize(20);
         RecyclerView.LayoutManager layoutManager = new GridLayoutManager(getContext(), 3);
         recyclerView.setLayoutManager(layoutManager);
-
         shows = prepareData(json);
         adapter = new DataAdapter(shows);
         recyclerView.setAdapter(adapter);
-
         adapter.setOnCardClickListener(this::launchActivity);
     }
 
     private ArrayList<Show> prepareData(JSONArray json) {
-
         ArrayList<Show> showsList = new ArrayList<>();
         try {
             for (int i = 0; i < json.length(); i++) {
@@ -113,60 +113,33 @@ public class HomeFragment extends Fragment {
                 show.setId(json.getJSONObject(i).get("id") + "");
                 showsList.add(show);
             }
-
-
         } catch (Exception e) {
             Log.d("VIBE", String.valueOf(e));
         }
         return showsList;
     }
 
-    @SuppressLint("StaticFieldLeak")
-    class GetDataList extends AsyncTask<String, String, JSONArray> {
+    private void saveData(String jsonText) {
+        SharedPreferences sharedPreferences = getContext().getSharedPreferences(SHARED_PREFS, getContext().MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(EXTERNAL_DATA, jsonText);
+        editor.apply();
+    }
 
-        @Override
-        protected JSONArray doInBackground(String... strings) {
-            getExternalData();
-            return getExternalData();
+    private void loadData() throws JSONException {
+        SharedPreferences sharedPreferences = getContext().getSharedPreferences(SHARED_PREFS, getContext().MODE_PRIVATE);
+        String jsonString = sharedPreferences.getString(EXTERNAL_DATA, null);
+        if (jsonString == null) {
+            GetDataList task = new GetDataList(result -> {
+                Log.d("VIBE", "Loading data from online.");
+                saveData(result);
+                initViews(new JSONArray(result));
+            });
+            task.execute();
+        } else {
+            Log.d("VIBE", "Loading data from shared preferences.");
+            initViews(new JSONArray(jsonString));
         }
-
-        private JSONArray getExternalData() {
-            String fileURL = "https://data.pownthep.vercel.app/merged.json";
-
-            JSONArray json = new JSONArray();
-            try {
-                json = readJsonFromUrl(fileURL);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return json;
-        }
-
-        private String readAll(Reader rd) throws IOException {
-            StringBuilder sb = new StringBuilder();
-            int cp;
-            while ((cp = rd.read()) != -1) {
-                sb.append((char) cp);
-            }
-            return sb.toString();
-        }
-
-        public JSONArray readJsonFromUrl(String url) throws IOException, JSONException {
-            try (InputStream is = new URL(url).openStream()) {
-                BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-                String jsonText = readAll(rd);
-                JSONArray json = new JSONArray(jsonText);
-                MainActivity.externalData = json;
-                return json;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(JSONArray data) {
-            super.onPostExecute(data);
-            initViews(data);
-        }
-
     }
 }
 

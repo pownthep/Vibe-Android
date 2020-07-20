@@ -1,9 +1,15 @@
 <resources>
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorPrimary">#e91e63</item>
+        <item name="colorAccent">#e91e63</item>
+        <item name="colorPrimaryDark">@android:color/transparent</item>
+        <item name="android:colorBackground">#121212</item>
+        <item name="colorSurface">#121212</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorOnBackground">#FFFFFF</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="colorOnError">#000000</item>
     </style>
 
     <style name="FullscreenTheme" parent="AppTheme">
@@ -19,10 +25,14 @@
     </style>
 
     <style name="NoActionBar.FullScreen" parent="@style/Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
-        <item name="colorSecondary">@color/colorAccent</item>
-        <item name="android:statusBarColor">@color/transparent</item>
+        <item name="colorPrimary">#e91e63</item>
+        <item name="colorAccent">#e91e63</item>
+        <item name="colorPrimaryDark">@android:color/transparent</item>
+        <item name="android:colorBackground">#121212</item>
+        <item name="colorSurface">#121212</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorOnBackground">#FFFFFF</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="colorOnError">#000000</item>
     </style>
 </resources>

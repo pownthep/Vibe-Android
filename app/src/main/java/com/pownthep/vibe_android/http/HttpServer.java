@@ -29,6 +29,7 @@ import rawhttp.core.RawHttpRequest;
 
 import static com.pownthep.vibe_android.MainActivity.APP_DATA;
 import static com.pownthep.vibe_android.MainActivity.accessToken;
+import static com.pownthep.vibe_android.MainActivity.isCacheEnabled;
 
 public class HttpServer extends Thread {
     private ServerSocket serverSocket;
@@ -87,9 +88,8 @@ public class HttpServer extends Thread {
                     pw.flush();
                     if (request.getHeaders().get("Range").size() > 0) {
                         Log.d("VIBE", "Sending partial data:" + request.getHeaders().get("Range").get(0));
-                        ArrayList<String> fileList = listFilesForFolder(fileId, Long.parseLong(start));
-
-                        if (fileList.size() > 0) {
+                        ArrayList<String> fileList = isCacheEnabled ? listFilesForFolder(fileId, Long.parseLong(start)) : null;
+                        if (fileList != null && fileList.size() > 0) {
                             long reqByteStart = Long.parseLong(start);
                             long parseEnd = Long.parseLong(end);
                             for (String tmp : fileList) {
@@ -119,6 +119,7 @@ public class HttpServer extends Thread {
                                 }
                             }
                         } else {
+                            Log.d("VIBE", "Online: " + start + "->" + end);
                             httpStreamFile(fileId, Long.parseLong(start), Long.parseLong(end), res);
                         }
                     }
@@ -136,6 +137,7 @@ public class HttpServer extends Thread {
 
     public void startServer() throws IOException {
         serverSocket = new ServerSocket(8080);
+        Log.d("VIBE", String.valueOf(isCacheEnabled));
         int count = 0;
         while (serverSocket.isBound() && !serverSocket.isClosed()) {
             Socket socket = serverSocket.accept();
@@ -155,7 +157,6 @@ public class HttpServer extends Thread {
             long byteEnd = byteStart + (fileEntry.length() - 1);
             if (fileEntry.isFile() && fileEntry.getName().contains(fileId) && byteEnd > start && byteStart <= start) {
                 files.add(fileEntry.getName());
-                //Log.d("VIBE", fileEntry.getName());
             }
         }
         Collections.sort(files);
@@ -180,27 +181,33 @@ public class HttpServer extends Thread {
             int responseCode = urlConnection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK || responseCode == HttpURLConnection.HTTP_PARTIAL) {
                 // opens input stream from the HTTP connection
-                File newFile = new File(APP_DATA + File.separator + fileId + "@" + start);
                 InputStream inputStream = urlConnection.getInputStream();
-                FileOutputStream fileOutputStream = new FileOutputStream(newFile);
                 int bytesRead;
                 byte[] buffer = new byte[4096];
-                //long byteTransferred = 0;
                 boolean error = false;
-                //long prev = 0;
-                while ((bytesRead = inputStream.read(buffer)) != -1 && !error) {
-                    try {
-                        res.write(buffer, 0, bytesRead);
-                        fileOutputStream.write(buffer, 0, bytesRead);
-//                        prev = byteTransferred/1000000;
-//                        byteTransferred += bytesRead;
-//                        if (byteTransferred/1000000 > prev) Log.d("VIBE", "Transfer: " + byteTransferred/1000000);
-                    } catch (SocketException e) {
-                        Log.d("VIBE ERROR", "Socket closed!");
-                        error = true;
+                if (isCacheEnabled) {
+                    File newFile = new File(APP_DATA + File.separator + fileId + "@" + start);
+                    FileOutputStream fileOutputStream = new FileOutputStream(newFile);
+                    while ((bytesRead = inputStream.read(buffer)) != -1 && !error) {
+                        try {
+                            res.write(buffer, 0, bytesRead);
+                            fileOutputStream.write(buffer, 0, bytesRead);
+                        } catch (SocketException e) {
+                            Log.d("VIBE ERROR", "Socket closed!");
+                            error = true;
+                        }
+                    }
+                    fileOutputStream.close();
+                } else {
+                    while ((bytesRead = inputStream.read(buffer)) != -1 && !error) {
+                        try {
+                            res.write(buffer, 0, bytesRead);
+                        } catch (SocketException e) {
+                            Log.d("VIBE ERROR", "Socket closed!");
+                            error = true;
+                        }
                     }
                 }
-                fileOutputStream.close();
                 inputStream.close();
             } else {
                 Log.d("VIBE", "No file to download. Server replied HTTP code: " + responseCode);

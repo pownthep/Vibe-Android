@@ -1,5 +1,7 @@
 package com.pownthep.vibe_android.player;
 
+import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.PixelFormat;
 import android.net.Uri;
@@ -21,6 +23,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.textfield.TextInputLayout;
 import com.pownthep.vibe_android.R;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.slider.Slider;
@@ -38,8 +41,11 @@ import org.videolan.libvlc.MediaPlayer;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 
-import static com.pownthep.vibe_android.MainActivity.externalData;
+import static com.pownthep.vibe_android.MainActivity.EXTERNAL_DATA;
+import static com.pownthep.vibe_android.MainActivity.LIBRARY_ARRAY;
+import static com.pownthep.vibe_android.MainActivity.SHARED_PREFS;
 
 public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callback {
     private JSONObject data;
@@ -65,6 +71,10 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     private ArrayList<Episode> episodeArrayList;
     private EpisodeAdapter episodeAdapter;
     private ProgressBar loadingIndicator;
+    private ProgressBar videoProgress;
+    private FloatingActionButton lockRotate;
+    private boolean isRotateLock = false;
+    private FloatingActionButton addToLibBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,6 +97,49 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         darkOverlay = findViewById(R.id.overlay);
         TextInputEditText episodeInput = findViewById(R.id.search_text_episode);
         loadingIndicator = findViewById(R.id.progressBar);
+        videoProgress = findViewById(R.id.progressBar2);
+        lockRotate = findViewById(R.id.lock_rotate);
+        addToLibBtn = findViewById(R.id.add_lib_btn);
+        FloatingActionButton backBtn = findViewById(R.id.back_btn);
+        backBtn.setOnClickListener(view -> {
+            onBackPressed();
+        });
+
+        SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
+        String libString = sharedPreferences.getString(LIBRARY_ARRAY, "");
+        String index = getIntent().getStringExtra("DATA_INDEX");
+
+        if (libString.contains(index)) {
+            addToLibBtn.setImageResource(R.drawable.ic_baseline_library_add_check_24);
+            addToLibBtn.setEnabled(false);
+        }
+
+        addToLibBtn.setOnClickListener(view -> {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(LIBRARY_ARRAY, libString + index + ",");
+            editor.apply();
+            addToLibBtn.setImageResource(R.drawable.ic_baseline_library_add_check_24);
+            addToLibBtn.setEnabled(false);
+            Snackbar.make(contextView, "Added to library", Snackbar.LENGTH_SHORT)
+                    .show();
+        });
+
+        lockRotate.setOnClickListener(view -> {
+            boolean isPortrait = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
+            if (isRotateLock) {
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+                lockRotate.setImageResource(R.drawable.ic_baseline_screen_lock_rotation_24);
+                isRotateLock = false;
+                return;
+            }
+            if (!isPortrait && !isRotateLock) {
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+            } else {
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
+            }
+            isRotateLock = true;
+            lockRotate.setImageResource(R.drawable.ic_baseline_lock_open_24);
+        });
 
         getData();
         try {
@@ -94,6 +147,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         } catch (JSONException e) {
             e.printStackTrace();
         }
+
         episodeInput.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -134,7 +188,6 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                 int nextIndex = (currentIndex + 1) >= count ? 0 : (currentIndex + 1);
                 Log.d("VIBE", "Next audio track id:" + tracks[nextIndex].id + "/" + count);
                 mMediaPlayer.setAudioTrack(tracks[nextIndex].id);
-                contextView = findViewById(R.id.player_view);
                 Snackbar.make(contextView, tracks[nextIndex].name, Snackbar.LENGTH_SHORT)
                         .show();
             }
@@ -152,7 +205,6 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                 int nextIndex = (currentIndex + 1) >= count ? 0 : (currentIndex + 1);
                 Log.d("VIBE", "Next sub track id:" + tracks[nextIndex].id + "/" + count);
                 mMediaPlayer.setSpuTrack(tracks[nextIndex].id);
-                contextView = findViewById(R.id.player_view);
                 Snackbar.make(contextView, tracks[nextIndex].name, Snackbar.LENGTH_SHORT)
                         .show();
             }
@@ -212,6 +264,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         if (mMediaPlayer != null) {
             mMediaPlayer.play();
             togglePlay.setImageResource(R.drawable.ic_round_pause_24);
+            addToLibBtn.setVisibility(View.VISIBLE);
         }
     }
 
@@ -226,7 +279,11 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         try {
             String index = getIntent().getStringExtra("DATA_INDEX");
             assert index != null;
-            data = externalData.getJSONObject(Integer.parseInt(index));
+            SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
+            String jsonString = sharedPreferences.getString(EXTERNAL_DATA, "[]");
+            JSONArray jsonArray = new JSONArray(jsonString);
+            data = jsonArray.getJSONObject(Integer.parseInt(index));
+            ((TextInputLayout) findViewById(R.id.search_container)).setHint((CharSequence) data.get("name"));
             episodes = (JSONArray) data.get("episodes");
             title.setText(data.get("name").toString());
         } catch (JSONException e) {
@@ -300,12 +357,16 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         FrameLayout.LayoutParams subParams = (FrameLayout.LayoutParams) mSurfaceSubtitles.getLayoutParams();
         FrameLayout.LayoutParams thumbnailParams = (FrameLayout.LayoutParams) mEpisodeThumbnail.getLayoutParams();
         FrameLayout.LayoutParams darkOverlayParams = (FrameLayout.LayoutParams) darkOverlay.getLayoutParams();
+        FrameLayout.LayoutParams videoProgressParams = (FrameLayout.LayoutParams) videoProgress.getLayoutParams();
         int statusBarHeight = statusBarHeight(getResources());
 
         if (vout != null)
             vout.setWindowSize(isPortrait ? mWidth : mHeight, isPortrait ? 610 : mWidth);
         if (!isPortrait) {
             hideSystemUI();
+            videoProgress.setVisibility(View.INVISIBLE);
+            addToLibBtn.setVisibility(View.INVISIBLE);
+
             overlayParams.height = mWidth;
             videoParams.height = mWidth;
             subParams.height = mWidth;
@@ -323,6 +384,9 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
 
         } else {
             showSystemUI();
+            videoProgress.setVisibility(mMediaPlayer != null ? View.VISIBLE : View.INVISIBLE);
+            addToLibBtn.setVisibility(View.VISIBLE);
+
             overlayParams.height = 610;
             videoParams.height = 610;
             subParams.height = mWidth;
@@ -336,6 +400,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
             videoParams.topMargin = statusBarHeight;
             overlayParams.topMargin = statusBarHeight;
             subParams.topMargin = statusBarHeight;
+            videoProgressParams.topMargin = 610 + statusBarHeight;
             recyclerView.setVisibility(View.VISIBLE);
         }
     }
@@ -432,7 +497,11 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                 }
                 case MediaPlayer.Event.TimeChanged:
                     if (player.mMediaPlayer.getTime() > 0 && !player.seeking) {
-                        player.slider.setValue(player.mMediaPlayer.getTime());
+                        float currentTime = player.mMediaPlayer.getTime();
+                        float length = player.mMediaPlayer.getLength();
+                        float progress = currentTime / length * 100;
+                        player.slider.setValue(currentTime);
+                        player.videoProgress.setProgress((int) progress);
                     }
                 default:
                     break;
@@ -483,7 +552,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     }
 
     private static int statusBarHeight(android.content.res.Resources res) {
-        return (int) (24 * res.getDisplayMetrics().density);
+        return (int) (28 * res.getDisplayMetrics().density);
     }
 
 }

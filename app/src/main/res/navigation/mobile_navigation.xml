@@ -12,14 +12,14 @@
         tools:layout="@layout/fragment_home" />
 
     <fragment
-        android:id="@+id/navigation_dashboard"
-        android:name="com.pownthep.vibe_android.ui.dashboard.DashboardFragment"
+        android:id="@+id/navigation_library"
+        android:name="com.pownthep.vibe_android.ui.library.LibraryFragment"
         android:label="@string/title_dashboard"
-        tools:layout="@layout/fragment_dashboard" />
+        tools:layout="@layout/fragment_library" />
 
     <fragment
-        android:id="@+id/navigation_notifications"
-        android:name="com.pownthep.vibe_android.ui.notifications.NotificationsFragment"
+        android:id="@+id/navigation_settings"
+        android:name="com.pownthep.vibe_android.ui.settings.SettingsFragment"
         android:label="@string/title_notifications"
-        tools:layout="@layout/fragment_notifications" />
+        tools:layout="@layout/fragment_settings" />
 </navigation>

@@ -13,21 +13,22 @@
         android:paddingBottom="10dp">
 
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/search_container"
             style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:layout_marginBottom="12dp"
-            android:layout_marginLeft="12dp"
-            android:layout_marginRight="12dp"
-            android:background="@android:color/background_dark"
+            android:layout_marginLeft="6dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginRight="6dp"
+            android:layout_marginBottom="5dp"
             android:hint="@string/search_text"
-            app:boxCornerRadiusTopEnd="10dp"
-            app:boxCornerRadiusTopStart="10dp"
             app:boxCornerRadiusBottomEnd="10dp"
             app:boxCornerRadiusBottomStart="10dp"
+            app:boxCornerRadiusTopEnd="10dp"
+            app:boxCornerRadiusTopStart="10dp"
             app:boxStrokeWidth="0dp"
             app:boxStrokeWidthFocused="0dp"
+            app:endIconMode="clear_text"
             app:startIconContentDescription="search_icon"
             app:startIconDrawable="@drawable/ic_round_search_24">
 
@@ -63,12 +64,11 @@
     <ImageView
         android:id="@+id/episode_thumbnail"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:foreground="@drawable/overlay"
-        android:layout_margin="0dp"
+        android:layout_height="match_parent"
         android:layout_gravity="top"
-        android:scaleType="fitXY"
-        android:contentDescription="@string/episode_thumbnail" />
+        android:contentDescription="@string/episode_thumbnail"
+        android:foreground="@drawable/overlay_black"
+        android:scaleType="fitXY" />
 
     <FrameLayout
         android:id="@+id/overlay"
@@ -88,8 +88,8 @@
             android:layout_width="100dp"
             android:layout_height="100dp"
             android:layout_gravity="center"
-            android:visibility="invisible"
-            />
+            android:indeterminateTint="@android:color/white"
+            android:visibility="invisible" />
 
         <com.google.android.material.slider.Slider
             android:id="@+id/slider"
@@ -101,7 +101,9 @@
             android:value="0.0"
             android:valueFrom="0.0"
             android:valueTo="100.0"
+            app:thumbColor="@android:color/white"
             app:thumbRadius="8dp"
+            app:trackColor="@android:color/white"
             app:trackHeight="2dp" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -114,6 +116,31 @@
             app:borderWidth="0dp"
             app:elevation="0dp"
             app:srcCompat="@drawable/ic_round_audiotrack_white"
+            app:tint="@android:color/white" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/lock_rotate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:contentDescription="@string/toggle_rotate_lock"
+            android:layout_marginTop="48dp"
+            app:backgroundTint="@color/transparent"
+            app:borderWidth="0dp"
+            app:elevation="0dp"
+            app:srcCompat="@drawable/ic_baseline_screen_lock_rotation_24"
+            app:tint="@android:color/white" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/back_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:contentDescription="@string/go_back_to_previous_activity"
+            app:backgroundTint="@color/transparent"
+            app:borderWidth="0dp"
+            app:elevation="0dp"
+            app:srcCompat="@drawable/ic_round_arrow_back_24"
             app:tint="@android:color/white" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -135,6 +162,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:contentDescription="@string/toggle_play"
+            app:backgroundTint="@android:color/white"
             app:srcCompat="@drawable/ic_round_play_arrow_24" />
 
         <TextView
@@ -142,11 +170,34 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="top|center"
-            android:layout_marginTop="10dp"
-            android:text="@string/title"
-            android:textColor="@color/colorPrimary"
+            android:layout_marginTop="50dp"
             android:shadowColor="@android:color/black"
-            android:textStyle="bold"
-            android:textSize="14sp" />
+            android:text="@string/title"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
     </FrameLayout>
+
+    <ProgressBar
+        android:id="@+id/progressBar2"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:layout_gravity="top"
+        android:max="100"
+        android:progress="0"
+        android:visibility="invisible" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/add_lib_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="24dp"
+        android:backgroundTint="@color/colorPrimary"
+        android:contentDescription="@string/add_to_library_button"
+        app:borderWidth="0dp"
+        app:srcCompat="@drawable/ic_baseline_library_add_24" />
+
 </FrameLayout>

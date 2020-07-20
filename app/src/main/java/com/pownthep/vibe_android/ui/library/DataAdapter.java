@@ -1,4 +1,4 @@
-package com.pownthep.vibe_android.ui.home;
+package com.pownthep.vibe_android.ui.library;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.pownthep.vibe_android.R;
+import com.pownthep.vibe_android.ui.home.Show;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -43,7 +44,7 @@ public class DataAdapter extends RecyclerView.Adapter<DataAdapter.ViewHolder> {
     @NonNull
     @Override
     public DataAdapter.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
-        View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.row_layout, viewGroup, false);
+        View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.lib_item, viewGroup, false);
         return new ViewHolder(view, mListener);
     }
 
@@ -71,8 +72,8 @@ public class DataAdapter extends RecyclerView.Adapter<DataAdapter.ViewHolder> {
 
         public ViewHolder(View view, final OnCardClickListener listener) {
             super(view);
-            thumbnail = view.findViewById(R.id.show_thumbnail);
-            title = view.findViewById(R.id.show_title);
+            thumbnail = view.findViewById(R.id.lib__show_thumbnail);
+            title = view.findViewById(R.id.lib_show_title);
             thumbnail.setOnClickListener(view1 -> {
                 if (listener != null) {
                     int position = getAdapterPosition();
