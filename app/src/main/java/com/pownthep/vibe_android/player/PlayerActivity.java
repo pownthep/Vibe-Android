@@ -23,12 +23,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.textfield.TextInputLayout;
-import com.pownthep.vibe_android.R;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.slider.Slider;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
+import com.pownthep.vibe_android.R;
+import com.pownthep.vibe_android.http.HttpServer;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
@@ -39,9 +40,9 @@ import org.videolan.libvlc.LibVLC;
 import org.videolan.libvlc.Media;
 import org.videolan.libvlc.MediaPlayer;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import static com.pownthep.vibe_android.MainActivity.EXTERNAL_DATA;
 import static com.pownthep.vibe_android.MainActivity.LIBRARY_ARRAY;
@@ -75,6 +76,8 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     private FloatingActionButton lockRotate;
     private boolean isRotateLock = false;
     private FloatingActionButton addToLibBtn;
+    private HttpServer server;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,6 +111,8 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
         String libString = sharedPreferences.getString(LIBRARY_ARRAY, "");
         String index = getIntent().getStringExtra("DATA_INDEX");
+        server = new HttpServer();
+        server.start();
 
         if (libString.contains(index)) {
             addToLibBtn.setImageResource(R.drawable.ic_baseline_library_add_check_24);
@@ -166,7 +171,10 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         });
 
         togglePlay.setOnClickListener(view -> {
-            if (mMediaPlayer == null) return;
+            if (mMediaPlayer == null) {
+                playMedia();
+                return;
+            }
             int state = mMediaPlayer.getPlayerState();
             Log.d("VIBE", String.valueOf(state));
             if (state == 3) {
@@ -264,7 +272,19 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         if (mMediaPlayer != null) {
             mMediaPlayer.play();
             togglePlay.setImageResource(R.drawable.ic_round_pause_24);
-            addToLibBtn.setVisibility(View.VISIBLE);
+        } else {
+            try {
+                if (episodes != null) {
+                    Log.d("VIBE", episodes.getJSONObject(0).get("name") + "");
+                    title.setText(String.format("%s", episodes.getJSONObject(0).get("name")));
+                    download(episodes.getJSONObject(0).get("id") + "", episodes.getJSONObject(0).get("size") + "");
+                    togglePlay.setImageResource(R.drawable.ic_round_pause_24);
+                    if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT)
+                        videoProgress.setVisibility(View.VISIBLE);
+                }
+            } catch (JSONException e) {
+                Snackbar.make(contextView, "Unable to play", Snackbar.LENGTH_SHORT);
+            }
         }
     }
 
@@ -314,11 +334,14 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         ArrayList<Episode> episodeArrayList = new ArrayList<>();
         try {
             for (int i = 0; i < episodes.length(); i++) {
-                Episode episode = new Episode();
-                episode.setName(episodes.getJSONObject(i).get("name") + "");
-                episode.setId(episodes.getJSONObject(i).get("id") + "");
-                episode.setIndex(i);
-                episodeArrayList.add(episode);
+                try {
+                    episodes.getJSONObject(i).get("size");
+                    Episode episode = new Episode();
+                    episode.setName(episodes.getJSONObject(i).get("name") + "");
+                    episode.setId(episodes.getJSONObject(i).get("id") + "");
+                    episode.setIndex(i);
+                    episodeArrayList.add(episode);
+                } catch (JSONException e) {}
             }
             return episodeArrayList;
 
@@ -345,6 +368,11 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     protected void onDestroy() {
         super.onDestroy();
         releasePlayer();
+        try {
+            server.stopServer();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

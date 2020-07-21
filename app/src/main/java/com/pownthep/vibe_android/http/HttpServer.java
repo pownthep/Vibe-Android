@@ -137,15 +137,20 @@ public class HttpServer extends Thread {
 
     public void startServer() throws IOException {
         serverSocket = new ServerSocket(8080);
+        Log.d("VIBE", String.valueOf(serverSocket.getInetAddress()));
         Log.d("VIBE", String.valueOf(isCacheEnabled));
         int count = 0;
         while (serverSocket.isBound() && !serverSocket.isClosed()) {
-            Socket socket = serverSocket.accept();
-            count++;
-            Log.d("VIBE", "------------------------------------------------------------------------------------------------------------------------------");
-            Log.d("VIBE", "Incoming request: " + count);
-            HttpThread thread = new HttpThread(socket, count);
-            thread.start();
+            try {
+                Socket socket = serverSocket.accept();
+                count++;
+                Log.d("VIBE", "------------------------------------------------------------------------------------------------------------------------------");
+                Log.d("VIBE", "Incoming request: " + count);
+                HttpThread thread = new HttpThread(socket, count);
+                thread.start();
+            } catch (SocketException e) {
+                Log.d("HTTP", "SHUTTING DOWN");
+            }
         }
     }
 
