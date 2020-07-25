@@ -130,7 +130,7 @@ public class HomeFragment extends Fragment {
         SharedPreferences sharedPreferences = getContext().getSharedPreferences(SHARED_PREFS, getContext().MODE_PRIVATE);
         String jsonString = sharedPreferences.getString(EXTERNAL_DATA, null);
         if (jsonString == null) {
-            GetDataList task = new GetDataList(result -> {
+            GetDataList task = new GetDataList("https://data.pownthep.vercel.app/trimmed.json", result -> {
                 Log.d("VIBE", "Loading data from online.");
                 saveData(result);
                 initViews(new JSONArray(result));

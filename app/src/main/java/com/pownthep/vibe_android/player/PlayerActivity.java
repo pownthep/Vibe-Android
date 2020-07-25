@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -30,6 +31,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.pownthep.vibe_android.R;
 import com.pownthep.vibe_android.http.HttpServer;
+import com.pownthep.vibe_android.utils.GetDataList;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
@@ -147,11 +149,6 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         });
 
         getData();
-        try {
-            initViews();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
 
         episodeInput.addTextChangedListener(new TextWatcher() {
             @Override
@@ -253,8 +250,6 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         mHeight = displayMetrics.heightPixels;
         mWidth = displayMetrics.widthPixels;
-        setSize();
-
     }
 
     private void filter(String text) {
@@ -296,19 +291,10 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     }
 
     private void getData() {
-        try {
-            String index = getIntent().getStringExtra("DATA_INDEX");
-            assert index != null;
-            SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
-            String jsonString = sharedPreferences.getString(EXTERNAL_DATA, "[]");
-            JSONArray jsonArray = new JSONArray(jsonString);
-            data = jsonArray.getJSONObject(Integer.parseInt(index));
-            ((TextInputLayout) findViewById(R.id.search_container)).setHint((CharSequence) data.get("name"));
-            episodes = (JSONArray) data.get("episodes");
-            title.setText(data.get("name").toString());
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        String index = getIntent().getStringExtra("DATA_INDEX");
+        assert index != null;
+        String url = "https://data.pownthep.vercel.app/shows/" + index + ".json";
+        loadData(url);
     }
 
     private void initViews() throws JSONException {
@@ -328,6 +314,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
             title.setText(String.format("%s", episodes.getJSONObject(position).get("name")));
             download(episodes.getJSONObject(position).get("id") + "", episodes.getJSONObject(position).get("size") + "");
         });
+        setSize();
     }
 
     private ArrayList<Episode> prepareData() {
@@ -341,7 +328,8 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                     episode.setId(episodes.getJSONObject(i).get("id") + "");
                     episode.setIndex(i);
                     episodeArrayList.add(episode);
-                } catch (JSONException e) {}
+                } catch (JSONException e) {
+                }
             }
             return episodeArrayList;
 
@@ -412,7 +400,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
 
         } else {
             showSystemUI();
-            videoProgress.setVisibility(mMediaPlayer != null ? View.VISIBLE : View.INVISIBLE);
+            videoProgress.setVisibility(View.VISIBLE);
             addToLibBtn.setVisibility(View.VISIBLE);
 
             overlayParams.height = 610;
@@ -583,4 +571,23 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         return (int) (28 * res.getDisplayMetrics().density);
     }
 
+    private void loadData(String url) {
+        GetDataList task = new GetDataList(url, result -> {
+            try {
+                data = new JSONObject(result);
+                ((TextInputLayout) findViewById(R.id.search_container)).setHint((CharSequence) data.get("name"));
+                episodes = (JSONArray) data.get("episodes");
+                title.setText(data.get("name").toString());
+                data.get("type");
+                if (data.get("type").toString().contains("movie")) {
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+                }
+            } catch (JSONException e) {
+            }
+            initViews();
+            findViewById(R.id.data_loader).setVisibility(View.INVISIBLE);
+            overlay.setVisibility(View.VISIBLE);
+        });
+        task.execute();
+    }
 }

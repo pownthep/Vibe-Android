@@ -80,8 +80,8 @@
     <FrameLayout
         android:id="@+id/player_overlay"
         android:layout_width="match_parent"
+        android:visibility="invisible"
         android:layout_height="wrap_content">
-
 
         <ProgressBar
             android:id="@+id/progressBar"
@@ -199,5 +199,12 @@
         android:contentDescription="@string/add_to_library_button"
         app:borderWidth="0dp"
         app:srcCompat="@drawable/ic_baseline_library_add_24" />
+
+    <ProgressBar
+        android:id="@+id/data_loader"
+        style="?android:attr/progressBarStyle"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
 
 </FrameLayout>

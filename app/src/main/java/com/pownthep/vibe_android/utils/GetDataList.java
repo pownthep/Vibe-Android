@@ -13,15 +13,16 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 public class GetDataList extends AsyncTask<String, String, String> {
-    private final String fileURL = "https://data.pownthep.vercel.app/merged.json";
     private final TaskListener taskListener;
+    private String url;
 
     public interface TaskListener {
         void onFinished(String result) throws JSONException;
     }
 
-    public GetDataList(TaskListener taskListener) {
+    public GetDataList(String url, TaskListener taskListener) {
         this.taskListener = taskListener;
+        this.url = url;
     }
 
     @Override
@@ -32,7 +33,7 @@ public class GetDataList extends AsyncTask<String, String, String> {
     private String getExternalData() {
         String json = "[]";
         try {
-            json = readJsonFromUrl(fileURL);
+            json = readJsonFromUrl(url);
         } catch (Exception e) {
             e.printStackTrace();
         }
