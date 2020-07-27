@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -22,7 +23,6 @@ import org.json.JSONException;
 
 import java.util.ArrayList;
 
-import static com.pownthep.vibe_android.MainActivity.EXTERNAL_DATA;
 import static com.pownthep.vibe_android.MainActivity.LIBRARY_ARRAY;
 import static com.pownthep.vibe_android.MainActivity.SHARED_PREFS;
 
@@ -37,22 +37,18 @@ public class LibraryFragment extends Fragment {
         SharedPreferences sharedPreferences = getContext().getSharedPreferences(SHARED_PREFS, getContext().MODE_PRIVATE);
         String libArrayString = sharedPreferences.getString(LIBRARY_ARRAY, null);
         if (libArrayString != null) {
-            String[] libArray = libArrayString.split(",");
-            String jsonString = sharedPreferences.getString(EXTERNAL_DATA, null);
-            if (jsonString != null) {
-                try {
-                    JSONArray jsonArray = new JSONArray(jsonString);
-                    JSONArray newArray = new JSONArray();
-                    for (String i : libArray) {
-                        newArray.put(jsonArray.get(Integer.parseInt(i)));
-                    }
-                    initViews(newArray);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+            root.findViewById(R.id.lib_placeholder).setVisibility(View.GONE);
+            try {
+                JSONArray libArray = new JSONArray(libArrayString);
+                initViews(libArray);
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
-
         }
+
+        root.findViewById(R.id.explore_btn).setOnClickListener(view -> {
+            Navigation.findNavController(view).navigate(R.id.navigation_home);
+        });
         return root;
     }
 
@@ -73,7 +69,7 @@ public class LibraryFragment extends Fragment {
         try {
             for (int i = 0; i < json.length(); i++) {
                 Show show = new Show();
-                show.setName(json.getJSONObject(i).get("name") + " - " + ((JSONArray) json.getJSONObject(i).get("episodes")).length() + " episodes");
+                show.setName(json.getJSONObject(i).get("name") + " - " + ((JSONArray) json.getJSONObject(i).get("episodes")).length() + " Episodes");
                 show.setImg(json.getJSONObject(i).get("banner") + "");
                 show.setId(json.getJSONObject(i).get("id") + "");
                 showsList.add(show);

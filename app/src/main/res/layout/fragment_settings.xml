@@ -69,6 +69,28 @@
         app:icon="@drawable/ic_round_refresh_24" />
 
     <View
+        android:id="@+id/divider3"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20dp"
+        android:background="?android:attr/listDivider" />
+
+    <TextView
+        android:id="@+id/user_data_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        android:text="Restore your app preferences to default values. " />
+
+    <Button
+        android:id="@+id/restore_default"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/reset_user_data"
+        app:icon="@drawable/ic_baseline_clear_24" />
+
+    <View
         android:id="@+id/divider"
         android:layout_width="match_parent"
         android:layout_height="2dp"
@@ -91,5 +113,7 @@
         android:layout_gravity="bottom"
         android:text="@string/sign_out"
         app:icon="@drawable/ic_baseline_person_24" />
+
+
 
 </LinearLayout>

@@ -21,7 +21,6 @@ import com.google.android.gms.common.api.Scope;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.google.api.services.drive.DriveScopes;
-import com.pownthep.vibe_android.http.HttpServer;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -56,7 +55,6 @@ public class MainActivity extends AppCompatActivity {
         isCacheEnabled = sharedPreferences.getBoolean(CACHE_OPTION, true);
         //Google Drive.
         requestSignIn();
-
     }
 
     @Override
@@ -64,6 +62,11 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         Log.d("VIBE START", "STARTING!!!!!");
         APP_DATA = String.valueOf(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS));
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 
     @Override

@@ -13,7 +13,6 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -46,7 +45,6 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
-import static com.pownthep.vibe_android.MainActivity.EXTERNAL_DATA;
 import static com.pownthep.vibe_android.MainActivity.LIBRARY_ARRAY;
 import static com.pownthep.vibe_android.MainActivity.SHARED_PREFS;
 
@@ -76,10 +74,12 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     private ProgressBar loadingIndicator;
     private ProgressBar videoProgress;
     private FloatingActionButton lockRotate;
-    private boolean isRotateLock = false;
     private FloatingActionButton addToLibBtn;
+    private TextView timeProgress;
     private HttpServer server;
-
+    private int currentMediaId;
+    private long currentMediaTime;
+    private long restartMediaTime = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,50 +105,48 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         videoProgress = findViewById(R.id.progressBar2);
         lockRotate = findViewById(R.id.lock_rotate);
         addToLibBtn = findViewById(R.id.add_lib_btn);
+        timeProgress = findViewById(R.id.time_progress);
         FloatingActionButton backBtn = findViewById(R.id.back_btn);
         backBtn.setOnClickListener(view -> {
             onBackPressed();
         });
 
         SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
-        String libString = sharedPreferences.getString(LIBRARY_ARRAY, "");
+        String libString = sharedPreferences.getString(LIBRARY_ARRAY, null);
         String index = getIntent().getStringExtra("DATA_INDEX");
-        server = new HttpServer();
-        server.start();
-
-        if (libString.contains(index)) {
+        getData();
+        if (libString != null && index != null && libString.contains("\"id\":" + index + ",")) {
             addToLibBtn.setImageResource(R.drawable.ic_baseline_library_add_check_24);
             addToLibBtn.setEnabled(false);
         }
 
         addToLibBtn.setOnClickListener(view -> {
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString(LIBRARY_ARRAY, libString + index + ",");
-            editor.apply();
-            addToLibBtn.setImageResource(R.drawable.ic_baseline_library_add_check_24);
-            addToLibBtn.setEnabled(false);
-            Snackbar.make(contextView, "Added to library", Snackbar.LENGTH_SHORT)
-                    .show();
+            if (data != null) {
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                try {
+                    JSONArray tmp = sharedPreferences.getString(LIBRARY_ARRAY, null) == null ? new JSONArray() : new JSONArray(libString);
+                    tmp.put(data);
+                    editor.putString(LIBRARY_ARRAY, tmp.toString());
+                    editor.apply();
+                    Log.d(TAG, "onCreate: " + tmp.toString());
+                    addToLibBtn.setImageResource(R.drawable.ic_baseline_library_add_check_24);
+                    addToLibBtn.setEnabled(false);
+                    Snackbar.make(contextView, "Added to library", Snackbar.LENGTH_SHORT)
+                            .show();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
         });
 
         lockRotate.setOnClickListener(view -> {
             boolean isPortrait = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
-            if (isRotateLock) {
-                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-                lockRotate.setImageResource(R.drawable.ic_baseline_screen_lock_rotation_24);
-                isRotateLock = false;
-                return;
-            }
-            if (!isPortrait && !isRotateLock) {
+            if (isPortrait) {
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
             } else {
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
             }
-            isRotateLock = true;
-            lockRotate.setImageResource(R.drawable.ic_baseline_lock_open_24);
         });
-
-        getData();
 
         episodeInput.addTextChangedListener(new TextWatcher() {
             @Override
@@ -215,13 +213,13 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
             }
         });
         mSurface.setOnClickListener(view -> {
-            boolean visible = overlay.getVisibility() == View.VISIBLE;
+            boolean visible = overlay.getAlpha() == 1.0f;
             if (visible) {
-                overlay.setVisibility(View.INVISIBLE);
-                darkOverlay.setVisibility(View.INVISIBLE);
+                overlay.animate().alpha(0.0f);
+                darkOverlay.animate().alpha(0.0f);
             } else {
-                overlay.setVisibility(View.VISIBLE);
-                darkOverlay.setVisibility(View.VISIBLE);
+                overlay.animate().alpha(1.0f);
+                darkOverlay.animate().alpha(0.5f);
             }
         });
         slider.addOnSliderTouchListener(new Slider.OnSliderTouchListener() {
@@ -233,6 +231,10 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
 
             @Override
             public void onStopTrackingTouch(@NonNull Slider slider) {
+                if(!server.isAlive()) {
+                    server = new HttpServer();
+                    server.start();
+                }
                 if (mMediaPlayer == null) return;
                 float value = slider.getValue();
                 mMediaPlayer.setTime((long) value);
@@ -312,6 +314,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         episodeAdapter.setOnCardClickListener(position -> {
             Log.d("VIBE", episodes.getJSONObject(position).get("name") + "");
             title.setText(String.format("%s", episodes.getJSONObject(position).get("name")));
+            currentMediaId = position;
             download(episodes.getJSONObject(position).get("id") + "", episodes.getJSONObject(position).get("size") + "");
         });
         setSize();
@@ -349,7 +352,26 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     @Override
     protected void onPause() {
         super.onPause();
+        pauseMedia();
         releasePlayer();
+        try {
+            if (server != null) server.stopServer();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        pauseMedia();
+        releasePlayer();
+        try {
+            if (server != null) server.stopServer();
+            server = null;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -357,8 +379,26 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         super.onDestroy();
         releasePlayer();
         try {
-            server.stopServer();
+            if (server != null) server.stopServer();
+            server = null;
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        try {
+            JSONObject currentEp = (JSONObject) episodes.get(currentMediaId);
+            if (server == null) {
+                server = new HttpServer();
+                server.start();
+            }
+            createPlayer(Uri.parse("http://localhost:8080?id=" + currentEp.get("id") + "&size=" + currentEp.get("size")));
+            restartMediaTime = currentMediaTime;
+            playMedia();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -429,11 +469,11 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
             boolean isPortrait = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
             ArrayList<String> options = new ArrayList<>();
             //options.add("--subsdec-encoding <encoding>");
-            options.add("--aout=opensles");
-            options.add("--audio-time-stretch"); // time stretching
+//            options.add("--aout=opensles");
+//            options.add("--audio-time-stretch"); // time stretching
             //options.add("-vvv"); // verbosity
             libvlc = new LibVLC(this, options);
-            holder.setKeepScreenOn(true);
+            mSurface.getHolder().setKeepScreenOn(true);
 
             // Creating media player
             mMediaPlayer = new MediaPlayer(libvlc);
@@ -449,7 +489,6 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
 
             Media m = new Media(libvlc, media);
             mMediaPlayer.setMedia(m);
-            playMedia();
         } catch (Exception e) {
             Log.d("VIBE", e.toString());
         }
@@ -493,7 +532,6 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
             switch (event.type) {
                 case MediaPlayer.Event.EndReached:
                     Log.d(TAG, "MediaPlayerEndReached");
-                    player.releasePlayer();
                     break;
                 case MediaPlayer.Event.Playing: {
                     Log.d("VIBE", "Playing");
@@ -502,6 +540,9 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                     player.mEpisodeThumbnail.setVisibility(View.INVISIBLE);
                     if (player.mMediaPlayer.getLength() > 0) {
                         player.slider.setValueTo(player.mMediaPlayer.getLength());
+                    }
+                    if (player.restartMediaTime > 0) {
+                        player.mMediaPlayer.setTime(player.restartMediaTime);
                     }
                 }
                 case MediaPlayer.Event.Paused: {
@@ -513,11 +554,14 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                 }
                 case MediaPlayer.Event.TimeChanged:
                     if (player.mMediaPlayer.getTime() > 0 && !player.seeking) {
-                        float currentTime = player.mMediaPlayer.getTime();
-                        float length = player.mMediaPlayer.getLength();
-                        float progress = currentTime / length * 100;
+                        long currentTime = player.mMediaPlayer.getTime();
+                        long length = player.mMediaPlayer.getLength();
+                        int progress = (int) (((float) currentTime / (float) length) * 100);
+
                         player.slider.setValue(currentTime);
-                        player.videoProgress.setProgress((int) progress);
+                        player.videoProgress.setProgress(progress);
+                        player.timeProgress.setText(player.msToReadable(currentTime) + "/" + player.msToReadable(length));
+                        player.currentMediaTime = currentTime;
                     }
                 default:
                     break;
@@ -525,19 +569,33 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         }
     }
 
-    private void download(String fileId, String fileSize) {
+    private String msToReadable(long ms) {
+        String seconds = (int) (ms / 1000) % 60 < 10 ? "0" + (int) (ms / 1000) % 60 : String.valueOf((int) (ms / 1000) % 60);
+        String minutes = (int) ((ms / (1000 * 60)) % 60) < 10 ? "0" + (int) ((ms / (1000 * 60)) % 60) : String.valueOf((int) ((ms / (1000 * 60)) % 60));
+        String hours = (int) ((ms / (1000 * 60 * 60)) % 24) < 10 ? "0" + (int) ((ms / (1000 * 60 * 60)) % 24) : String.valueOf((int) ((ms / (1000 * 60 * 60)) % 24));
+        return (hours + ":" + minutes + ":" + seconds);
+    }
+
+    private void download(String fileId, String fileSize) { ;
         Picasso.get().load("https://lh3.googleusercontent.com/u/0/d/" + fileId).into(mEpisodeThumbnail);
         loadingIndicator.setVisibility(View.VISIBLE);
         changeMediaOrCreatePlayer(Uri.parse("http://localhost:8080?id=" + fileId + "&size=" + fileSize));
+        playMedia();
     }
 
     private void changeMediaOrCreatePlayer(Uri uri) {
+        if (server == null) {
+            server = new HttpServer();
+            server.start();
+        }
         if (mMediaPlayer != null) {
             mMediaPlayer.stop();
             Media m = new Media(libvlc, uri);
             mMediaPlayer.setMedia(m);
-            playMedia();
-        } else createPlayer(uri);
+        } else {
+            createPlayer(uri);
+        }
+        ;
     }
 
     private void hideSystemUI() {
@@ -568,7 +626,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     }
 
     private static int statusBarHeight(android.content.res.Resources res) {
-        return (int) (28 * res.getDisplayMetrics().density);
+        return (int) (30 * res.getDisplayMetrics().density);
     }
 
     private void loadData(String url) {
@@ -578,10 +636,6 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                 ((TextInputLayout) findViewById(R.id.search_container)).setHint((CharSequence) data.get("name"));
                 episodes = (JSONArray) data.get("episodes");
                 title.setText(data.get("name").toString());
-                data.get("type");
-                if (data.get("type").toString().contains("movie")) {
-                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-                }
             } catch (JSONException e) {
             }
             initViews();

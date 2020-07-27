@@ -47,6 +47,10 @@ public class SettingsFragment extends Fragment {
             Snackbar.make(getView(), committed ? "Reset catalogue completed":"Unable to reset the catalogue", Snackbar.LENGTH_SHORT)
                     .show();
         });
+        root.findViewById(R.id.restore_default).setOnClickListener(view -> {
+            restoreDefault();
+            initView(root);
+        });
         initView(root);
         return root;
     }
@@ -104,5 +108,11 @@ public class SettingsFragment extends Fragment {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.remove(EXTERNAL_DATA);
         return editor.commit();
+    }
+
+    public void restoreDefault() {
+        SharedPreferences sharedPreferences = getContext().getSharedPreferences(SHARED_PREFS, getContext().MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.clear().commit();
     }
 }

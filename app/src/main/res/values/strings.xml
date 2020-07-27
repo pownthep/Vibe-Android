@@ -28,4 +28,5 @@
     <string name="reload_catalogue">Reset catalogue</string>
     <string name="reload_text">Reload the catalogue to get latest shows.</string>
     <string name="go_back_to_previous_activity">go back to previous activity</string>
+    <string name="reset_user_data">Restore to default</string>
 </resources>

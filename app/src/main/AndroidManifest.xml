@@ -18,6 +18,7 @@
         android:usesCleartextTraffic="true">
         <activity
             android:name="com.pownthep.vibe_android.player.PlayerActivity"
+            android:configChanges="orientation|screenSize"
             android:screenOrientation="portrait"
             android:theme="@style/NoActionBar.FullScreen"
             />
