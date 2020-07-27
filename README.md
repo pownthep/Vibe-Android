@@ -2,6 +2,12 @@
 
 Video streaming app powered by Google Drive and LibVLC.
 
+#### Perks
+- HEVC encoded video = lower bandwidth usage and higher quality videos
+- One of the best CDN in world = No random buffering and up to 1 Gbps download speed (I've tested it with my internet)
+- One of the most powerful video player (VLC) on the market = Play pretty much any video format available on Earth
+- Free
+
 #### Require: Authentication with a Google Drive Account 
 
 Why?
