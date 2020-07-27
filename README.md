@@ -1,4 +1,4 @@
-# 📽️ Vibe Android
+![alt text](https://github.com/pownthep/Vibe-Android/blob/master/app/src/main/res/mipmap-hdpi/ic_launcher_round.png "Logo Title Text 1") 
 
 Video streaming app powered by Google Drive and LibVLC.
 
