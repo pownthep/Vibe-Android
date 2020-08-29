@@ -3,8 +3,8 @@
 <!--    <color name="colorPrimary">#212121</color>-->
     <color name="primaryLightColor">#484848</color>
 <!--    <color name="colorPrimaryDark">#000000</color>-->
-    <color name="colorPrimary">#e91e63</color>
-    <color name="colorAccent">#e91e63</color>
+    <color name="colorPrimary">#11cb5f</color>
+    <color name="colorAccent">#11cb5f</color>
     <color name="colorPrimaryVariant">#3700B3</color>
     <color name="colorOnPrimary">#FFFFFF</color>
     <color name="colorPrimaryDark">#000000</color>

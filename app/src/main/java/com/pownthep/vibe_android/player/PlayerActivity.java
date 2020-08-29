@@ -15,6 +15,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -43,6 +44,8 @@ import org.videolan.libvlc.MediaPlayer;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
 import java.util.ArrayList;
 
 import static com.pownthep.vibe_android.MainActivity.LIBRARY_ARRAY;
@@ -80,6 +83,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     private int currentMediaId;
     private long currentMediaTime;
     private long restartMediaTime = 0;
+    private LinearLayout infoBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,6 +110,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         lockRotate = findViewById(R.id.lock_rotate);
         addToLibBtn = findViewById(R.id.add_lib_btn);
         timeProgress = findViewById(R.id.time_progress);
+        infoBar = findViewById(R.id.info);
         FloatingActionButton backBtn = findViewById(R.id.back_btn);
         backBtn.setOnClickListener(view -> {
             onBackPressed();
@@ -271,16 +276,15 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
             togglePlay.setImageResource(R.drawable.ic_round_pause_24);
         } else {
             try {
-                if (episodes != null) {
-                    Log.d("VIBE", episodes.getJSONObject(0).get("name") + "");
-                    title.setText(String.format("%s", episodes.getJSONObject(0).get("name")));
-                    download(episodes.getJSONObject(0).get("id") + "", episodes.getJSONObject(0).get("size") + "");
+                if (episodeArrayList != null) {
+                    title.setText(String.format("%s", episodeArrayList.get(0).getName()));
+                    download(episodeArrayList.get(0).getId(), episodeArrayList.get(0).getBytes());
                     togglePlay.setImageResource(R.drawable.ic_round_pause_24);
                     if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT)
                         videoProgress.setVisibility(View.VISIBLE);
                 }
-            } catch (JSONException e) {
-                Snackbar.make(contextView, "Unable to play", Snackbar.LENGTH_SHORT);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -295,7 +299,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     private void getData() {
         String index = getIntent().getStringExtra("DATA_INDEX");
         assert index != null;
-        String url = "https://data.pownthep.vercel.app/shows/" + index + ".json";
+        String url = "https://vibe-three.vercel.app/data/shows/" + index + ".json";
         loadData(url);
     }
 
@@ -306,41 +310,58 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
 
-        episodeArrayList = prepareData();
         Picasso.get().load(data.get("banner") + "").into(mEpisodeThumbnail);
+        Picasso.get().load(data.get("poster") + "").into((ImageView) findViewById(R.id.image_avatar));
         episodeAdapter = new EpisodeAdapter(episodeArrayList);
         recyclerView.setAdapter(episodeAdapter);
 
         episodeAdapter.setOnCardClickListener(position -> {
-            Log.d("VIBE", episodes.getJSONObject(position).get("name") + "");
-            title.setText(String.format("%s", episodes.getJSONObject(position).get("name")));
+            title.setText(String.format("%s", episodeArrayList.get(position).getName()));
             currentMediaId = position;
-            download(episodes.getJSONObject(position).get("id") + "", episodes.getJSONObject(position).get("size") + "");
+            download(episodeArrayList.get(position).getId(), episodeArrayList.get(position).getBytes());
         });
         setSize();
     }
 
     private ArrayList<Episode> prepareData() {
-        ArrayList<Episode> episodeArrayList = new ArrayList<>();
+        ArrayList<Episode> tmp = new ArrayList<>();
         try {
             for (int i = 0; i < episodes.length(); i++) {
                 try {
                     episodes.getJSONObject(i).get("size");
                     Episode episode = new Episode();
+                    long sizeBytes = Long.parseLong(episodes.getJSONObject(i).get("size").toString());
+                    episode.setSize(humanReadableByteCountBin(sizeBytes));
                     episode.setName(episodes.getJSONObject(i).get("name") + "");
                     episode.setId(episodes.getJSONObject(i).get("id") + "");
+                    episode.setBytes(episodes.getJSONObject(i).get("size").toString());
                     episode.setIndex(i);
-                    episodeArrayList.add(episode);
+                    tmp.add(episode);
                 } catch (JSONException e) {
                 }
             }
-            return episodeArrayList;
+            return tmp;
 
         } catch (Exception e) {
             Log.d("VIBE", String.valueOf(e));
         }
-        return episodeArrayList;
+        return tmp;
 
+    }
+
+    private String humanReadableByteCountBin(long bytes) {
+        long absB = bytes == Long.MIN_VALUE ? Long.MAX_VALUE : Math.abs(bytes);
+        if (absB < 1024) {
+            return bytes + " B";
+        }
+        long value = absB;
+        CharacterIterator ci = new StringCharacterIterator("KMGTPE");
+        for (int i = 40; i >= 0 && absB > 0xfffccccccccccccL >> i; i -= 10) {
+            value >>= 10;
+            ci.next();
+        }
+        value *= Long.signum(bytes);
+        return String.format("%.1f %ciB", value / 1024.0, ci.current());
     }
 
     @Override
@@ -390,12 +411,12 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     protected void onRestart() {
         super.onRestart();
         try {
-            JSONObject currentEp = (JSONObject) episodes.get(currentMediaId);
+            Episode currentEp = episodeArrayList.get(currentMediaId);
             if (server == null) {
                 server = new HttpServer();
                 server.start();
             }
-            createPlayer(Uri.parse("http://localhost:8080?id=" + currentEp.get("id") + "&size=" + currentEp.get("size")));
+            createPlayer(Uri.parse("http://localhost:8080?id=" + currentEp.getId() + "&size=" + currentEp.getBytes()));
             restartMediaTime = currentMediaTime;
             playMedia();
         } catch (Exception e) {
@@ -419,6 +440,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         if (vout != null)
             vout.setWindowSize(isPortrait ? mWidth : mHeight, isPortrait ? 610 : mWidth);
         if (!isPortrait) {
+            infoBar.setVisibility(View.INVISIBLE);
             hideSystemUI();
             videoProgress.setVisibility(View.INVISIBLE);
             addToLibBtn.setVisibility(View.INVISIBLE);
@@ -439,15 +461,16 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
             recyclerView.setVisibility(View.INVISIBLE);
 
         } else {
+            infoBar.setVisibility(View.VISIBLE);
             showSystemUI();
-            videoProgress.setVisibility(View.VISIBLE);
+            videoProgress.setVisibility(mMediaPlayer != null ? View.VISIBLE:View.INVISIBLE);
             addToLibBtn.setVisibility(View.VISIBLE);
 
             overlayParams.height = 610;
             videoParams.height = 610;
             subParams.height = mWidth;
-            thumbnailParams.height = 610 + statusBarHeight;
-            darkOverlayParams.height = 610 + statusBarHeight;
+            thumbnailParams.height = 780 + statusBarHeight;
+            darkOverlayParams.height = mHeight+statusBarHeight;
 
             videoParams.width = mWidth;
             subParams.width = mWidth;
@@ -466,6 +489,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         try {
             // Create LibVLC
             // TODO: make this more robust, and sync with audio demo
+            videoProgress.setVisibility(View.VISIBLE);
             boolean isPortrait = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
             ArrayList<String> options = new ArrayList<>();
             //options.add("--subsdec-encoding <encoding>");
@@ -580,6 +604,9 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         Picasso.get().load("https://lh3.googleusercontent.com/u/0/d/" + fileId).into(mEpisodeThumbnail);
         loadingIndicator.setVisibility(View.VISIBLE);
         changeMediaOrCreatePlayer(Uri.parse("http://localhost:8080?id=" + fileId + "&size=" + fileSize));
+//        Uri path = Uri.parse("https://www.googleapis.com/drive/v3/files/"+fileId+"?alt=media&key=AIzaSyAv1WgLGclLIlhKvzIiIVOiqZqDA0EM9TI");
+//        Log.d(TAG, "https://www.googleapis.com/drive/v3/files/"+fileId+"?alt=media&key=AIzaSyAv1WgLGclLIlhKvzIiIVOiqZqDA0EM9TI");
+//        changeMediaOrCreatePlayer(path);
         playMedia();
     }
 
@@ -633,14 +660,18 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         GetDataList task = new GetDataList(url, result -> {
             try {
                 data = new JSONObject(result);
-                ((TextInputLayout) findViewById(R.id.search_container)).setHint((CharSequence) data.get("name"));
+                ((TextView) findViewById(R.id.textTitle)).setText(data.get("name").toString());
                 episodes = (JSONArray) data.get("episodes");
-                title.setText(data.get("name").toString());
+                episodeArrayList = prepareData();
+                ((TextView) findViewById(R.id.textGenre)).setText("Genre: " + (CharSequence) data.get("keywords").toString().trim().replaceAll(",", " "));
+                ((TextView) findViewById(R.id.textRating)).setText("Rating: " + (CharSequence) data.get("rating").toString());
+                ((TextView) findViewById(R.id.textEpisodeNum)).setText("Episodes: " + episodeArrayList.size());
             } catch (JSONException e) {
             }
             initViews();
             findViewById(R.id.data_loader).setVisibility(View.INVISIBLE);
             overlay.setVisibility(View.VISIBLE);
+            infoBar.setVisibility(View.VISIBLE);
         });
         task.execute();
     }

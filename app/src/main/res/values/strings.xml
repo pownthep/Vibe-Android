@@ -13,8 +13,8 @@
     <string name="episode_thumbnail">episode thumbnail</string>
     <string name="switch_audio_track">switch audio track</string>
     <string name="toggle_play">toggle play</string>
-    <string name="title">Title</string>
-    <string name="search">Search in Vibe</string>
+    <string name="title"></string>
+    <string name="search">Search titles</string>
     <string name="episode_name">Episode Name</string>
     <string name="settings">Settings</string>
     <string name="library">Library</string>

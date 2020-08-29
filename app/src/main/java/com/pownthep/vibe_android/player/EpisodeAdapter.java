@@ -15,6 +15,8 @@ import com.squareup.picasso.Picasso;
 
 import org.json.JSONException;
 
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
 import java.util.ArrayList;
 
 public class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.ViewHolder> {
@@ -53,6 +55,7 @@ public class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.ViewHold
 
     @Override
     public void onBindViewHolder(ViewHolder viewHolder, int i) {
+        viewHolder.size.setText(episodes.get(i).getSize());
         viewHolder.name.setText(episodes.get(i).getName());
         viewHolder.setIndex(episodes.get(i).getIndex());
         Picasso.get().load("https://lh3.googleusercontent.com/u/0/d/"+episodes.get(i).getId()).into(viewHolder.img);
@@ -66,6 +69,7 @@ public class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.ViewHold
     public static class ViewHolder extends RecyclerView.ViewHolder {
         private final ImageView img;
         private final TextView name;
+        private final TextView size;
 
         public void setIndex(int index) {
             this.index = index;
@@ -77,6 +81,7 @@ public class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.ViewHold
             super(view);
             img = view.findViewById(R.id.thumbnail);
             name = view.findViewById(R.id.episode_name);
+            size = view.findViewById(R.id.size);
 
             img.setOnClickListener(view1 -> {
                 if (listener != null) {

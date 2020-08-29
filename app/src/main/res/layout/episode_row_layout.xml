@@ -1,41 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="170dp"
-    android:layout_gravity="center"
-    android:backgroundTint="#2e2e2e"
-    android:layout_margin="5dp"
-    app:cardCornerRadius="5dp"
-    app:cardElevation="0dp"
-    app:cardUseCompatPadding="true">
+<!--<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
+<!--    android:layout_width="match_parent"-->
+<!--    android:layout_height="190dp"-->
+<!--    android:layout_gravity="center"-->
+<!--    android:backgroundTint="#2e2e2e"-->
+<!--    android:layout_marginLeft="5dp"-->
+<!--    android:layout_marginRight="5dp"-->
+<!--    app:cardCornerRadius="0dp"-->
+<!--    app:cardElevation="0dp"-->
+<!--    app:cardUseCompatPadding="true">-->
 
-    <FrameLayout
+<!--    <FrameLayout-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent">-->
+
+<!--        <ImageView-->
+<!--            android:id="@+id/thumbnail"-->
+<!--            android:foreground="@drawable/overlay"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_gravity="center"-->
+<!--            android:contentDescription="@string/episode_thumbnail"-->
+<!--            android:scaleType="centerCrop" />-->
+
+<!--        <TextView-->
+<!--            android:id="@+id/episode_name"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_margin="10dp"-->
+<!--            android:shadowColor="@android:color/black"-->
+<!--            android:singleLine="true"-->
+<!--            android:text="@string/episode_name"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:layout_gravity="bottom"-->
+<!--            android:textStyle="bold" />-->
+
+<!--    </FrameLayout>-->
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
+        android:layout_marginRight="5dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="0dp"
+        android:layout_height="220dp">
         <ImageView
             android:id="@+id/thumbnail"
             android:foreground="@drawable/overlay"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_height="175dp"
             android:contentDescription="@string/episode_thumbnail"
-            android:scaleType="fitXY" />
-
+            android:scaleType="centerCrop" />
         <TextView
             android:id="@+id/episode_name"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:layout_marginTop="130dp"
-            android:gravity="bottom"
-            android:shadowColor="@android:color/black"
-            android:text="@string/episode_name"
-            android:textColor="@android:color/white"
-            android:textStyle="bold" />
+            android:layout_marginTop="5dp"
+            android:paddingLeft="15dp"
+            android:singleLine="true"
+            android:text="@string/episode_name" />
+        <TextView
+            android:text="1 GB"
+            android:id="@+id/size"
+            android:textSize="10sp"
+            android:layout_marginTop="2dp"
+            android:paddingLeft="15dp"
+            android:singleLine="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+</LinearLayout>
 
-    </FrameLayout>
+
+<!--</androidx.cardview.widget.CardView>-->
 
 
-</androidx.cardview.widget.CardView>

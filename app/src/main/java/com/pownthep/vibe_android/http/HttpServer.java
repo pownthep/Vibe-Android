@@ -102,7 +102,7 @@ public class HttpServer extends Thread {
                                     RandomAccessFile randFile = new RandomAccessFile(APP_DATA + File.separator + tmp, "r");
                                     randFile.seek(reqByteStart - byteStart);
                                     int bytesRead;
-                                    byte[] buffer = new byte[4096];
+                                    byte[] buffer = new byte[8192];
                                     boolean error = false;
                                     while ((bytesRead = randFile.read(buffer)) != -1 && !error) {
                                         try {
@@ -188,7 +188,7 @@ public class HttpServer extends Thread {
                 // opens input stream from the HTTP connection
                 InputStream inputStream = urlConnection.getInputStream();
                 int bytesRead;
-                byte[] buffer = new byte[4096];
+                byte[] buffer = new byte[8192];
                 boolean error = false;
                 if (isCacheEnabled) {
                     File newFile = new File(APP_DATA + File.separator + fileId + "@" + start);

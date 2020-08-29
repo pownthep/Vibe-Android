@@ -1,8 +1,8 @@
 <resources>
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">#e91e63</item>
-        <item name="colorAccent">#e91e63</item>
+        <item name="colorPrimary">#11cb5f</item>
+        <item name="colorAccent">#11cb5f</item>
         <item name="colorPrimaryDark">@android:color/transparent</item>
         <item name="android:colorBackground">#121212</item>
         <item name="colorSurface">#121212</item>
@@ -25,8 +25,8 @@
     </style>
 
     <style name="NoActionBar.FullScreen" parent="@style/Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">#e91e63</item>
-        <item name="colorAccent">#e91e63</item>
+        <item name="colorPrimary">#11cb5f</item>
+        <item name="colorAccent">#11cb5f</item>
         <item name="colorPrimaryDark">@android:color/transparent</item>
         <item name="android:colorBackground">#121212</item>
         <item name="colorSurface">#121212</item>
