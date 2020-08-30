@@ -4,8 +4,6 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.PixelFormat;
 import android.net.Uri;
 import android.os.Bundle;
@@ -13,16 +11,14 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.KeyEvent;
+import android.view.Gravity;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
-import android.widget.SeekBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -48,11 +44,9 @@ import org.videolan.libvlc.IVLCVout;
 import org.videolan.libvlc.LibVLC;
 import org.videolan.libvlc.Media;
 import org.videolan.libvlc.MediaPlayer;
-import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.net.URL;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.ArrayList;
@@ -69,7 +63,6 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     private SurfaceHolder holder;
     private LibVLC libvlc;
     private MediaPlayer mMediaPlayer = null;
-//    private SeekBar slider;
     private RecyclerView recyclerView;
     private FloatingActionButton togglePlay;
     private ImageView mEpisodeThumbnail;
@@ -99,6 +92,18 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     private TextView previewTextView;
     private PreviewSeekBar previewSeekBar;
     private Bitmap previewSprites;
+    private FrameLayout previewFrameLayout;
+    private FrameLayout.LayoutParams overlayParams;
+    private FrameLayout.LayoutParams videoParams;
+    private FrameLayout.LayoutParams subParams;
+    private FrameLayout.LayoutParams thumbnailParams;
+    private FrameLayout.LayoutParams darkOverlayParams;
+    private FrameLayout.LayoutParams videoProgressParams;
+    private FrameLayout.LayoutParams sliderParams;
+    private FrameLayout.LayoutParams previewFrameParams;
+    private FrameLayout.LayoutParams timeProgressParams;
+    private int statusBarHeight;
+    private int dp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,7 +118,6 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         holder = mSurface.getHolder();
         audio = findViewById(R.id.audio_cycle);
         sub = findViewById(R.id.sub_cycle);
-//        slider = findViewById(R.id.slider);
         mEpisodeThumbnail = findViewById(R.id.episode_thumbnail);
         title = findViewById(R.id.title);
         overlay = findViewById(R.id.player_overlay);
@@ -132,12 +136,15 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         backBtn.setOnClickListener(view -> {
             onBackPressed();
         });
+        previewFrameLayout = findViewById(R.id.previewFrameLayout);
+        statusBarHeight = statusBarHeight(getResources());
+        dp = (int) getResources().getDisplayMetrics().density;
 
         previewSeekBar = findViewById(R.id.previewSeekBar);
 
         previewSeekBar.setPreviewLoader((currentPosition, max) -> {
             if (previewSprites != null) {
-                int number = (int) (((float) currentPosition / (float) max) * 120); // 0-119
+                int number = (int) (((float) currentPosition / (float) max) * 119); // 0-119
                 int y = number / 10;
                 int x = number % 10;
                 Bitmap preview = Bitmap.createBitmap(previewSprites, 160*x,90*y,160, 90);
@@ -263,8 +270,11 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         previewSeekBar.addOnScrubListener(new PreviewBar.OnScrubListener() {
             @Override
             public void onScrubStart(PreviewBar previewBar) {
+                restartMediaTime = 0;
                 seeking = true;
                 pauseMedia();
+                togglePlay.setVisibility(View.INVISIBLE);
+                timeProgress.setVisibility(View.INVISIBLE);
             }
 
             @Override
@@ -274,6 +284,8 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
 
             @Override
             public void onScrubStop(PreviewBar previewBar) {
+                togglePlay.setVisibility(View.VISIBLE);
+                timeProgress.setVisibility(View.VISIBLE);
                 if(!server.isAlive()) {
                     server = new HttpServer();
                     server.start();
@@ -286,65 +298,21 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                 playMedia();
             }
         });
-
-//        slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-//            @Override
-//            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-//
-//            }
-//
-//            @Override
-//            public void onStartTrackingTouch(SeekBar seekBar) {
-//                seeking = true;
-//                pauseMedia();
-//            }
-//
-//            @Override
-//            public void onStopTrackingTouch(SeekBar seekBar) {
-//                if(!server.isAlive()) {
-//                    server = new HttpServer();
-//                    server.start();
-//                }
-//                if (mMediaPlayer == null) return;
-//                float value = slider.getProgress();
-//                mMediaPlayer.setTime((long) value);
-//                loadingIndicator.setVisibility(View.VISIBLE);
-//                seeking = false;
-//                playMedia();
-//            }
-//        });
-//        slider.addOnSliderTouchListener(new Slider.OnSliderTouchListener() {
-//            @Override
-//            public void onStartTrackingTouch(@NonNull Slider slider) {
-//                seeking = true;
-//                pauseMedia();
-//            }
-//
-//            @Override
-//            public void onStopTrackingTouch(@NonNull Slider slider) {
-//                if(!server.isAlive()) {
-//                    server = new HttpServer();
-//                    server.start();
-//                }
-//                if (mMediaPlayer == null) return;
-//                float value = slider.getValue();
-//                mMediaPlayer.setTime((long) value);
-//                loadingIndicator.setVisibility(View.VISIBLE);
-//                seeking = false;
-//                playMedia();
-//            }
-//        });
-//        slider.setLabelFormatter((value) -> {
-//            int minutes = (int) (value / 1000) / 60;
-//            int seconds = (int) ((value / 1000) % 60);
-//            return minutes + ":" + seconds;
-//        });
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         mHeight = displayMetrics.heightPixels;
         mWidth = displayMetrics.widthPixels;
-    }
 
+        overlayParams = (FrameLayout.LayoutParams) overlay.getLayoutParams();
+        videoParams = (FrameLayout.LayoutParams) mSurface.getLayoutParams();
+        subParams = (FrameLayout.LayoutParams) mSurfaceSubtitles.getLayoutParams();
+        thumbnailParams = (FrameLayout.LayoutParams) mEpisodeThumbnail.getLayoutParams();
+        darkOverlayParams = (FrameLayout.LayoutParams) darkOverlay.getLayoutParams();
+        videoProgressParams = (FrameLayout.LayoutParams) videoProgress.getLayoutParams();
+        sliderParams = (FrameLayout.LayoutParams) previewSeekBar.getLayoutParams();
+        previewFrameParams = (FrameLayout.LayoutParams) previewFrameLayout.getLayoutParams();
+        timeProgressParams = (FrameLayout.LayoutParams) timeProgress.getLayoutParams();
+    }
 
     private void filter(String text) {
         ArrayList<Episode> filteredList = new ArrayList<>();
@@ -357,14 +325,6 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
 
     }
 
-    private static Bitmap loadBitmapFromView(View v) {
-        Bitmap b = Bitmap.createBitmap( v.getLayoutParams().width, v.getLayoutParams().height, Bitmap.Config.ARGB_8888);
-        Canvas c = new Canvas(b);
-        v.layout(v.getLeft(), v.getTop(), v.getRight(), v.getBottom());
-        v.draw(c);
-        return b;
-    }
-
     private void playMedia() {
         if (mMediaPlayer != null) {
             mMediaPlayer.play();
@@ -375,8 +335,6 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                     title.setText(String.format("%s", episodeArrayList.get(0).getName()));
                     download(episodeArrayList.get(0).getId(), episodeArrayList.get(0).getBytes());
                     togglePlay.setImageResource(R.drawable.ic_round_pause_24);
-//                    if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT)
-//                        videoProgress.setVisibility(View.VISIBLE);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -421,6 +379,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     private ArrayList<Episode> prepareData() {
         ArrayList<Episode> tmp = new ArrayList<>();
         try {
+            int j = 0;
             for (int i = 0; i < episodes.length(); i++) {
                 try {
                     episodes.getJSONObject(i).get("size");
@@ -430,8 +389,9 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                     episode.setName(episodes.getJSONObject(i).get("name") + "");
                     episode.setId(episodes.getJSONObject(i).get("id") + "");
                     episode.setBytes(episodes.getJSONObject(i).get("size").toString());
-                    episode.setIndex(i);
+                    episode.setIndex(j);
                     tmp.add(episode);
+                    j++;
                 } catch (JSONException e) {
                 }
             }
@@ -522,17 +482,9 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     /**
      * Used to set size for SurfaceView
      */
+
     private void setSize() {
         boolean isPortrait = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
-        FrameLayout.LayoutParams overlayParams = (FrameLayout.LayoutParams) overlay.getLayoutParams();
-        FrameLayout.LayoutParams videoParams = (FrameLayout.LayoutParams) mSurface.getLayoutParams();
-        FrameLayout.LayoutParams subParams = (FrameLayout.LayoutParams) mSurfaceSubtitles.getLayoutParams();
-        FrameLayout.LayoutParams thumbnailParams = (FrameLayout.LayoutParams) mEpisodeThumbnail.getLayoutParams();
-        FrameLayout.LayoutParams darkOverlayParams = (FrameLayout.LayoutParams) darkOverlay.getLayoutParams();
-        FrameLayout.LayoutParams videoProgressParams = (FrameLayout.LayoutParams) videoProgress.getLayoutParams();
-//        FrameLayout.LayoutParams sliderParams = (FrameLayout.LayoutParams) slider.getLayoutParams();
-        FrameLayout.LayoutParams sliderParams = (FrameLayout.LayoutParams) previewSeekBar.getLayoutParams();
-        int statusBarHeight = statusBarHeight(getResources());
 
         if (vout != null)
             vout.setWindowSize(isPortrait ? mWidth : mHeight, isPortrait ? 610 : mWidth);
@@ -552,7 +504,13 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
             subParams.width = mHeight;
             darkOverlayParams.width = mHeight;
 
-            sliderParams.bottomMargin = (int) (18*getResources().getDisplayMetrics().density);
+            timeProgressParams.bottomMargin = 40*dp;
+            sliderParams.gravity = Gravity.BOTTOM;
+            sliderParams.bottomMargin = 20*dp;
+            sliderParams.leftMargin = 60*dp;
+            sliderParams.rightMargin = 60*dp;
+            sliderParams.topMargin = 0;
+            previewFrameParams.bottomMargin = 60*dp;
             videoParams.topMargin = 0;
             overlayParams.topMargin = 0;
             subParams.topMargin = 0;
@@ -561,20 +519,24 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         } else {
             infoBar.setVisibility(View.VISIBLE);
             showSystemUI();
-//            videoProgress.setVisibility(mMediaPlayer != null ? View.VISIBLE:View.INVISIBLE);
             addToLibBtn.setVisibility(View.VISIBLE);
 
-            overlayParams.height = 610;
+            overlayParams.height = 630;
             videoParams.height = 610;
-            subParams.height = mWidth;
+            subParams.height = 610;
             thumbnailParams.height = 780 + statusBarHeight;
             darkOverlayParams.height = mHeight+statusBarHeight;
 
             videoParams.width = mWidth;
             subParams.width = mWidth;
             darkOverlayParams.width = mWidth;
-
+            timeProgressParams.bottomMargin = 20*dp;
+            sliderParams.gravity = Gravity.TOP;
+            sliderParams.topMargin = 585;
             sliderParams.bottomMargin = 0;
+            sliderParams.leftMargin = 0;
+            sliderParams.rightMargin = 0;
+            previewFrameParams.bottomMargin = 20*dp;
             videoParams.topMargin = statusBarHeight;
             overlayParams.topMargin = statusBarHeight;
             subParams.topMargin = statusBarHeight;
@@ -588,7 +550,6 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         try {
             // Create LibVLC
             // TODO: make this more robust, and sync with audio demo
-            //videoProgress.setVisibility(View.VISIBLE);
             mSurface.setVisibility(View.VISIBLE);
             mSurfaceSubtitles.setVisibility(View.VISIBLE);
             audio.setVisibility(View.VISIBLE);
@@ -598,10 +559,6 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
             timeProgress.setVisibility(View.VISIBLE);
             boolean isPortrait = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
             ArrayList<String> options = new ArrayList<>();
-            //options.add("--subsdec-encoding <encoding>");
-//            options.add("--aout=opensles");
-//            options.add("--audio-time-stretch"); // time stretching
-            //options.add("-vvv"); // verbosity
             libvlc = new LibVLC(this, options);
             mSurface.getHolder().setKeepScreenOn(true);
 
@@ -667,9 +624,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                     Log.d("VIBE", "Playing");
                     Log.d("VIBE", "Setting loading off");
                     player.loadingIndicator.setVisibility(View.INVISIBLE);
-                    //player.mEpisodeThumbnail.setVisibility(View.INVISIBLE);
                     if (player.mMediaPlayer.getLength() > 0) {
-//                        player.slider.setMax((int) player.mMediaPlayer.getLength());
                         player.previewSeekBar.setMax((int) player.mMediaPlayer.getLength());
                     }
                     if (player.restartMediaTime > 0) {
@@ -687,11 +642,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                     if (player.mMediaPlayer.getTime() > 0 && !player.seeking) {
                         int currentTime = (int) player.mMediaPlayer.getTime();
                         long length = player.mMediaPlayer.getLength();
-                        int progress = (int) (((float) currentTime / (float) length) * 100);
-
-//                        player.slider.setProgress(currentTime);
                         player.previewSeekBar.setProgress(currentTime);
-//                        player.videoProgress.setProgress(progress);
                         player.timeProgress.setText(player.msToReadable(currentTime) + " / " + player.msToReadable(length));
                         player.currentMediaTime = currentTime;
                     }
@@ -710,13 +661,12 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
 
     private void download(String fileId, String fileSize) { ;
         loadingIndicator.setVisibility(View.VISIBLE);
+        previewSprites = null;
         GetImageBitmap task = new GetImageBitmap("https://pownthep-storage.b-cdn.net/previews/" + fileId + ".png", result -> {
             previewSprites = result;
         });
         task.execute();
         changeMediaOrCreatePlayer(Uri.parse("http://localhost:8080?id=" + fileId + "&size=" + fileSize));
-//        Uri path = Uri.parse("https://www.googleapis.com/drive/v3/files/"+fileId+"?alt=media&key=AIzaSyAv1WgLGclLIlhKvzIiIVOiqZqDA0EM9TI");
-//        changeMediaOrCreatePlayer(path);
         playMedia();
     }
 
@@ -725,14 +675,14 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
             server = new HttpServer();
             server.start();
         }
-        if (mMediaPlayer != null) {
-            mMediaPlayer.stop();
-            Media m = new Media(libvlc, uri);
-            mMediaPlayer.setMedia(m);
-        } else {
-            createPlayer(uri);
-        }
-        ;
+//        if (mMediaPlayer != null) {
+//            mMediaPlayer.stop();
+//            Media m = new Media(libvlc, uri);
+//            mMediaPlayer.setMedia(m);
+//        } else {
+//            createPlayer(uri);
+//        }
+        createPlayer(uri);
     }
 
     private void hideSystemUI() {
@@ -773,8 +723,8 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                 ((TextView) findViewById(R.id.textTitle)).setText(data.get("name").toString());
                 episodes = (JSONArray) data.get("episodes");
                 episodeArrayList = prepareData();
-                ((TextView) findViewById(R.id.textGenre)).setText("Genre: " + (CharSequence) data.get("keywords").toString().trim().replaceAll(",", " "));
-                ((TextView) findViewById(R.id.textRating)).setText("Rating: " + (CharSequence) data.get("rating").toString());
+                ((TextView) findViewById(R.id.textGenre)).setText("Genre: " + data.get("keywords").toString().trim().replaceAll(",", " "));
+                ((TextView) findViewById(R.id.textRating)).setText("Rating: " + data.get("rating").toString());
                 ((TextView) findViewById(R.id.textEpisodeNum)).setText("Episodes: " + episodeArrayList.size());
             } catch (JSONException e) {
             }

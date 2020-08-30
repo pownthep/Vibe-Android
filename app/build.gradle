@@ -53,7 +53,7 @@ android {
     applicationVariants.all { variant ->
         variant.outputs.each { output ->
             def abiName = output.getFilter(OutputFile.ABI)
-            output.outputFileName = "MyApp-${variant.versionName}-${abiName}.apk"
+            output.outputFileName = "Vibe-${variant.versionName}-${abiName}.apk"
             output.versionCodeOverride = defaultConfig.versionCode*10000000 + abiCodes.get(abiName, 0)
         }
     }

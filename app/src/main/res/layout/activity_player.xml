@@ -42,13 +42,22 @@
         android:visibility="invisible"
         android:layout_height="wrap_content">
 
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/play"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:contentDescription="@string/toggle_play"
+            app:backgroundTint="@android:color/white"
+            app:srcCompat="@drawable/ic_round_play_arrow_24" />
+
         <TextView
             android:visibility="invisible"
             android:id="@+id/time_progress"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|center"
-            android:layout_marginBottom="30dp"
+            android:layout_marginBottom="20dp"
             android:textStyle="bold"
             android:textSize="14sp"
             android:text="00:00/00:00" />
@@ -60,27 +69,6 @@
             android:layout_gravity="center"
             android:indeterminateTint="@android:color/white"
             android:visibility="invisible" />
-
-        <com.github.rubensousa.previewseekbar.PreviewSeekBar
-            android:visibility="invisible"
-            android:id="@+id/previewSeekBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:layout_gravity="bottom"
-            android:max="100000000"
-            app:previewFrameLayout="@id/previewFrameLayout"/>
-
-<!--        <SeekBar-->
-<!--            android:visibility="invisible"-->
-<!--            android:padding="0dp"-->
-<!--            android:id="@+id/slider"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_gravity="center|bottom"-->
-<!--            android:contentDescription="@string/slider_desc"-->
-<!--            android:progress="0"-->
-<!--            android:max="100" />-->
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:visibility="invisible"
@@ -102,7 +90,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
             android:contentDescription="@string/toggle_rotate_lock"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="5dp"
             app:backgroundTint="@color/transparent"
             app:borderWidth="0dp"
             app:elevation="0dp"
@@ -134,15 +122,6 @@
             app:elevation="0dp"
             app:srcCompat="@drawable/ic_baseline_subtitles_white"
             app:tint="@android:color/white" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/play"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:contentDescription="@string/toggle_play"
-            app:backgroundTint="@android:color/white"
-            app:srcCompat="@drawable/ic_round_play_arrow_24" />
 
         <TextView
             android:id="@+id/title"
@@ -176,12 +155,23 @@
                     android:layout_width="160dp"
                     android:layout_height="90dp" />
                 <TextView
+                    android:textStyle="bold"
                     android:layout_gravity="center"
                     android:id="@+id/previewTextView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
         </FrameLayout>
+
+        <com.github.rubensousa.previewseekbar.PreviewSeekBar
+            android:visibility="invisible"
+            android:id="@+id/previewSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp"
+            android:max="100000000"
+            app:previewFrameLayout="@id/previewFrameLayout"/>
 
     </FrameLayout>
     <LinearLayout
