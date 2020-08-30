@@ -46,32 +46,38 @@ android {
     splits {
         abi {
             enable true
-            reset()
-            include 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
-            universalApk false
+            include "x86", "x86_64", "armeabi-v7a", "arm64-v8a"
+        }
+    }
+    def abiCodes = ['x86':5, 'x86_64':8, 'armeabi-v7a':4, 'arm64-v8a':7]
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            def abiName = output.getFilter(OutputFile.ABI)
+            output.outputFileName = "MyApp-${variant.versionName}-${abiName}.apk"
+            output.versionCodeOverride = defaultConfig.versionCode*10000000 + abiCodes.get(abiName, 0)
         }
     }
 }
 
 // Map for the version code that gives each ABI a value.
-ext.abiCodes = [
-        'armeabi-v7a': 1,
-        'arm64-v8a'  : 2,
-        'x86'        : 3,
-        'x86_64'     : 4
-]
+//ext.abiCodes = [
+//        'armeabi-v7a': 1,
+//        'arm64-v8a'  : 2,
+//        'x86'        : 3,
+//        'x86_64'     : 4
+//]
 
 import com.android.build.OutputFile
-
-android.applicationVariants.all { variant ->
-    variant.outputs.each { output ->
-        def baseAbiVersionCode = project.ext.abiCodes.get(output.getFilter(OutputFile.ABI))
-
-        if (baseAbiVersionCode != null) {
-            output.versionCodeOverride = baseAbiVersionCode * 10000000 + variant.versionCode
-        }
-    }
-}
+//
+//android.applicationVariants.all { variant ->
+//    variant.outputs.each { output ->
+//        def baseAbiVersionCode = project.ext.abiCodes.get(output.getFilter(OutputFile.ABI))
+//
+//        if (baseAbiVersionCode != null) {
+//            output.versionCodeOverride = baseAbiVersionCode * 10000000 + variant.versionCode
+//        }
+//    }
+//}
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
@@ -82,9 +88,11 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+
     // LibVLC
     //implementation "de.mrmaffen:vlc-android-sdk:2.0.6"
-    implementation 'com.github.masterwok:libvlc-android-sdk:3.0.13'
+    implementation 'com.github.josemmo:libvlc-android:3.2.5'
+
     // Google Lib
     implementation 'com.google.android.gms:play-services-auth:18.0.0'
     implementation 'com.google.http-client:google-http-client-gson:1.26.0'
@@ -107,6 +115,8 @@ dependencies {
     implementation "androidx.recyclerview:recyclerview-selection:1.1.0-rc01"
     implementation 'com.squareup.picasso:picasso:2.71828'
     implementation 'com.athaydes.rawhttp:rawhttp-core:2.2.2'
+
+    implementation 'com.github.rubensousa:previewseekbar:3.0.0'
 
 }
 repositories {

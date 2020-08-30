@@ -32,6 +32,9 @@
             android:gravity="bottom"
             android:shadowColor="@android:color/black"
             android:text="@string/episode_name"
+            android:paddingRight="10dp"
+            android:paddingLeft="10dp"
+            android:maxLines="1"
             android:textColor="@android:color/white"
             android:textStyle="bold" />
 
