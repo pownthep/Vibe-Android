@@ -26,6 +26,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.android.volley.Request;
+import com.android.volley.toolbox.StringRequest;
 import com.github.rubensousa.previewseekbar.PreviewBar;
 import com.github.rubensousa.previewseekbar.PreviewSeekBar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -50,11 +52,20 @@ import java.lang.ref.WeakReference;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.pownthep.vibe_android.MainActivity.LIBRARY_ARRAY;
+import static com.pownthep.vibe_android.MainActivity.REFRESH_TOKEN;
 import static com.pownthep.vibe_android.MainActivity.SHARED_PREFS;
+import static com.pownthep.vibe_android.MainActivity.accessToken;
+import static com.pownthep.vibe_android.MainActivity.expirationDate;
+
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.Volley;
 
 public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callback {
+    private boolean ENDED = false;
     private JSONObject data;
     private JSONArray episodes;
     public final static String TAG = "PlayerActivity";
@@ -84,10 +95,10 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     private HttpServer server;
     private int currentMediaId;
     private long currentMediaTime;
-    private long restartMediaTime = 0;
+    private long restartMediaTime = -1;
     private LinearLayout infoBar;
     private FloatingActionButton audio;
-    private  FloatingActionButton sub;
+    private FloatingActionButton sub;
     private ImageView previewImageView;
     private TextView previewTextView;
     private PreviewSeekBar previewSeekBar;
@@ -104,10 +115,16 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     private FrameLayout.LayoutParams timeProgressParams;
     private int statusBarHeight;
     private int dp;
+    SharedPreferences sharedPreferences;
+    public Uri episodesUri;
+
+    private RequestQueue MyRequestQueue;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
         setContentView(R.layout.activity_player);
         mSurface = findViewById(R.id.surface);
         mSurfaceSubtitles = findViewById(R.id.sub_surface);
@@ -147,13 +164,13 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                 int number = (int) (((float) currentPosition / (float) max) * 119); // 0-119
                 int y = number / 10;
                 int x = number % 10;
-                Bitmap preview = Bitmap.createBitmap(previewSprites, 160*x,90*y,160, 90);
+                Bitmap preview = Bitmap.createBitmap(previewSprites, 160 * x, 90 * y, 160, 90);
                 previewImageView.setImageBitmap(preview);
             }
             previewTextView.setText(msToReadable(currentPosition));
         });
+        MyRequestQueue = Volley.newRequestQueue(this);
 
-        SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
         String libString = sharedPreferences.getString(LIBRARY_ARRAY, null);
         String index = getIntent().getStringExtra("DATA_INDEX");
         getData();
@@ -189,7 +206,6 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
             }
         });
-
 
 
         episodeInput.addTextChangedListener(new TextWatcher() {
@@ -270,7 +286,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         previewSeekBar.addOnScrubListener(new PreviewBar.OnScrubListener() {
             @Override
             public void onScrubStart(PreviewBar previewBar) {
-                restartMediaTime = 0;
+                restartMediaTime = -1;
                 seeking = true;
                 pauseMedia();
                 togglePlay.setVisibility(View.INVISIBLE);
@@ -284,15 +300,20 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
 
             @Override
             public void onScrubStop(PreviewBar previewBar) {
+                if (mMediaPlayer == null) return;
                 togglePlay.setVisibility(View.VISIBLE);
                 timeProgress.setVisibility(View.VISIBLE);
-                if(!server.isAlive()) {
+                Episode currentEp = episodeArrayList.get(currentMediaId);
+                episodesUri = Uri.parse("http://localhost:8080?id=" + currentEp.getId() + "&size=" + currentEp.getBytes());
+                if (server == null || !server.isAlive()) {
                     server = new HttpServer();
                     server.start();
                 }
-                if (mMediaPlayer == null) return;
-                float value = previewBar.getProgress();
-                mMediaPlayer.setTime((long) value);
+                long value = previewBar.getProgress();
+                if (ENDED) {
+                    download(currentEp.getId(), currentEp.getBytes());
+                }
+                mMediaPlayer.setTime(value);
                 loadingIndicator.setVisibility(View.VISIBLE);
                 seeking = false;
                 playMedia();
@@ -466,13 +487,14 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     protected void onRestart() {
         super.onRestart();
         try {
+            restartMediaTime = currentMediaTime;
             Episode currentEp = episodeArrayList.get(currentMediaId);
-            if (server == null) {
+            episodesUri = Uri.parse("http://localhost:8080?id=" + currentEp.getId() + "&size=" + currentEp.getBytes());
+            if (server == null || !server.isAlive()) {
                 server = new HttpServer();
                 server.start();
             }
-            createPlayer(Uri.parse("http://localhost:8080?id=" + currentEp.getId() + "&size=" + currentEp.getBytes()));
-            restartMediaTime = currentMediaTime;
+            createPlayer(episodesUri);
             playMedia();
         } catch (Exception e) {
             e.printStackTrace();
@@ -504,13 +526,13 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
             subParams.width = mHeight;
             darkOverlayParams.width = mHeight;
 
-            timeProgressParams.bottomMargin = 40*dp;
+            timeProgressParams.bottomMargin = 40 * dp;
             sliderParams.gravity = Gravity.BOTTOM;
-            sliderParams.bottomMargin = 20*dp;
-            sliderParams.leftMargin = 60*dp;
-            sliderParams.rightMargin = 60*dp;
+            sliderParams.bottomMargin = 20 * dp;
+            sliderParams.leftMargin = 60 * dp;
+            sliderParams.rightMargin = 60 * dp;
             sliderParams.topMargin = 0;
-            previewFrameParams.bottomMargin = 60*dp;
+            previewFrameParams.bottomMargin = 60 * dp;
             videoParams.topMargin = 0;
             overlayParams.topMargin = 0;
             subParams.topMargin = 0;
@@ -525,18 +547,18 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
             videoParams.height = 610;
             subParams.height = 610;
             thumbnailParams.height = 780 + statusBarHeight;
-            darkOverlayParams.height = mHeight+statusBarHeight;
+            darkOverlayParams.height = mHeight + statusBarHeight;
 
             videoParams.width = mWidth;
             subParams.width = mWidth;
             darkOverlayParams.width = mWidth;
-            timeProgressParams.bottomMargin = 20*dp;
+            timeProgressParams.bottomMargin = 20 * dp;
             sliderParams.gravity = Gravity.TOP;
             sliderParams.topMargin = 585;
             sliderParams.bottomMargin = 0;
             sliderParams.leftMargin = 0;
             sliderParams.rightMargin = 0;
-            previewFrameParams.bottomMargin = 20*dp;
+            previewFrameParams.bottomMargin = 20 * dp;
             videoParams.topMargin = statusBarHeight;
             overlayParams.topMargin = statusBarHeight;
             subParams.topMargin = statusBarHeight;
@@ -619,6 +641,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
             switch (event.type) {
                 case MediaPlayer.Event.EndReached:
                     Log.d(TAG, "MediaPlayerEndReached");
+                    player.ENDED = true;
                     break;
                 case MediaPlayer.Event.Playing: {
                     Log.d("VIBE", "Playing");
@@ -627,16 +650,24 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                     if (player.mMediaPlayer.getLength() > 0) {
                         player.previewSeekBar.setMax((int) player.mMediaPlayer.getLength());
                     }
-                    if (player.restartMediaTime > 0) {
+                    if (player.restartMediaTime > -1) {
                         player.mMediaPlayer.setTime(player.restartMediaTime);
                     }
+                    break;
                 }
                 case MediaPlayer.Event.Paused: {
                     Log.d("VIBE", "Paused Event");
+                    break;
                 }
                 case MediaPlayer.Event.Stopped:
+                    Log.d("VIBE", "Stopped Event");
+                    break;
                 case MediaPlayer.Event.MediaChanged:
+                    Log.d("VIBE", "MediaChanged Event");
+                    break;
                 case MediaPlayer.Event.Buffering: {
+                    Log.d("VIBE", "Buffering Event");
+                    break;
                 }
                 case MediaPlayer.Event.TimeChanged:
                     if (player.mMediaPlayer.getTime() > 0 && !player.seeking) {
@@ -646,6 +677,7 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
                         player.timeProgress.setText(player.msToReadable(currentTime) + " / " + player.msToReadable(length));
                         player.currentMediaTime = currentTime;
                     }
+                    break;
                 default:
                     break;
             }
@@ -659,7 +691,8 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
         return (hours + ":" + minutes + ":" + seconds);
     }
 
-    private void download(String fileId, String fileSize) { ;
+    private void download(String fileId, String fileSize) {
+        ENDED = false;
         loadingIndicator.setVisibility(View.VISIBLE);
         previewSprites = null;
         GetImageBitmap task = new GetImageBitmap("https://pownthep-storage.b-cdn.net/previews/" + fileId + ".png", result -> {
@@ -671,17 +704,10 @@ public class PlayerActivity extends AppCompatActivity implements IVLCVout.Callba
     }
 
     private void changeMediaOrCreatePlayer(Uri uri) {
-        if (server == null) {
+        if (server == null || !server.isAlive()) {
             server = new HttpServer();
             server.start();
         }
-//        if (mMediaPlayer != null) {
-//            mMediaPlayer.stop();
-//            Media m = new Media(libvlc, uri);
-//            mMediaPlayer.setMedia(m);
-//        } else {
-//            createPlayer(uri);
-//        }
         createPlayer(uri);
     }
 

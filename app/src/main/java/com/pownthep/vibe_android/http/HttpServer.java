@@ -2,6 +2,9 @@ package com.pownthep.vibe_android.http;
 
 import android.util.Log;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -27,12 +30,21 @@ import java.util.TimeZone;
 import rawhttp.core.RawHttp;
 import rawhttp.core.RawHttpRequest;
 
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
 import static com.pownthep.vibe_android.MainActivity.APP_DATA;
-import static com.pownthep.vibe_android.MainActivity.accessToken;
 import static com.pownthep.vibe_android.MainActivity.isCacheEnabled;
 
 public class HttpServer extends Thread {
     private ServerSocket serverSocket;
+
+    public HttpServer() {
+
+    }
 
     @Override
     public void run() {
@@ -59,10 +71,12 @@ public class HttpServer extends Thread {
                 RawHttpRequest request = http.parseRequest(socket.getInputStream());
                 String fileId = request.getUri().getQuery().split("&")[0].replace("id=", "");
                 long size = Long.parseLong(request.getUri().getQuery().split("&")[1].replace("size=", ""));
-                try (InputStream req = socket.getInputStream(); OutputStream res = socket.getOutputStream()) {
+                InputStream req = socket.getInputStream();
+                OutputStream res = socket.getOutputStream();
+                PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(res)), false);
+                try {
                     SimpleDateFormat gmtFrmt = new SimpleDateFormat("E, d MMM yyyy HH:mm:ss 'GMT'", Locale.US);
                     gmtFrmt.setTimeZone(TimeZone.getTimeZone("GMT"));
-                    PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(res)), false);
                     String start = "0";
                     String end = "";
                     if (request.getHeaders().get("Range").size() > 0) {
@@ -111,6 +125,7 @@ public class HttpServer extends Thread {
                                             error = true;
                                         }
                                     }
+                                    randFile.close();
                                     reqByteStart = byteEnd + 1;
                                 } else {
                                     long newEndByte = byteStart - 1 > reqByteStart ? byteStart - 1 : parseEnd;
@@ -126,6 +141,9 @@ public class HttpServer extends Thread {
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
+                    req.close();
+                    res.close();
+                    pw.close();
                     Log.d("VIBE", "Closing connection #" + id);
                     socket.close();
                 }
@@ -173,56 +191,73 @@ public class HttpServer extends Thread {
     }
 
 
-    private void httpStreamFile(String fileId, long start, long end, OutputStream res) {
-        String fileURL = "https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media";
-        URL url;
-        HttpURLConnection urlConnection = null;
-        try {
-            url = new URL(fileURL);
-            urlConnection = (HttpURLConnection) url.openConnection();
-            urlConnection.setRequestProperty("Authorization", "Bearer " + accessToken);
-            urlConnection.setRequestProperty("Range", "bytes=" + start + "-" + end);
+    private void httpStreamFile(String fileId, long start, long end, OutputStream res) throws IOException {
+        OkHttpClient client = new OkHttpClient().newBuilder()
+                .build();
+        MediaType mediaType = MediaType.parse("application/x-www-form-urlencoded");
+        RequestBody body = RequestBody.create(mediaType, "client_id=511377925028-ar09unh2rtfs8h0vh2u08p8nn4i9plqm.apps.googleusercontent.com&client_secret=QlADgLswq3Syw3e44OwNS4oa&refresh_token=1//0gWaNZQ16nhC2CgYIARAAGBASNwF-L9IrBapSAuTA6Agjb30Qc_xVWgc_AlwWguX-KTJ7frGJyCARvzuwybkIjxDPt1aC3v0QCAo&grant_type=refresh_token");
+        Request request = new Request.Builder()
+                .url("https://oauth2.googleapis.com/token")
+                .method("POST", body)
+                .addHeader("Content-Type", "application/x-www-form-urlencoded")
+                .build();
 
-            int responseCode = urlConnection.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_OK || responseCode == HttpURLConnection.HTTP_PARTIAL) {
-                // opens input stream from the HTTP connection
-                InputStream inputStream = urlConnection.getInputStream();
-                int bytesRead;
-                byte[] buffer = new byte[8192];
-                boolean error = false;
-                if (isCacheEnabled) {
-                    File newFile = new File(APP_DATA + File.separator + fileId + "@" + start);
-                    FileOutputStream fileOutputStream = new FileOutputStream(newFile);
-                    while ((bytesRead = inputStream.read(buffer)) != -1 && !error) {
-                        try {
-                            res.write(buffer, 0, bytesRead);
-                            fileOutputStream.write(buffer, 0, bytesRead);
-                        } catch (SocketException e) {
-                            Log.d("VIBE ERROR", "Socket closed!");
-                            error = true;
+        try (Response response = client.newCall(request).execute()) {
+            JSONObject json = new JSONObject(response.body().string());
+            String accessToken = (String) json.get("access_token");
+            String fileURL = "https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media";
+            URL url;
+            HttpURLConnection urlConnection = null;
+            try {
+                url = new URL(fileURL);
+                urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setRequestProperty("Authorization", "Bearer " + accessToken);
+                urlConnection.setRequestProperty("Range", "bytes=" + start + "-" + end);
+
+                int responseCode = urlConnection.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_OK || responseCode == HttpURLConnection.HTTP_PARTIAL) {
+                    // opens input stream from the HTTP connection
+                    InputStream inputStream = urlConnection.getInputStream();
+                    int bytesRead;
+                    byte[] buffer = new byte[8192];
+                    boolean error = false;
+                    if (isCacheEnabled) {
+                        File newFile = new File(APP_DATA + File.separator + fileId + "@" + start);
+                        FileOutputStream fileOutputStream = new FileOutputStream(newFile);
+                        while ((bytesRead = inputStream.read(buffer)) != -1 && !error) {
+                            try {
+                                res.write(buffer, 0, bytesRead);
+                                fileOutputStream.write(buffer, 0, bytesRead);
+                            } catch (SocketException e) {
+                                Log.d("VIBE ERROR", "Socket closed!");
+                                error = true;
+                            }
+                        }
+                        fileOutputStream.close();
+                    } else {
+                        while ((bytesRead = inputStream.read(buffer)) != -1 && !error) {
+                            try {
+                                res.write(buffer, 0, bytesRead);
+                            } catch (SocketException e) {
+                                Log.d("VIBE ERROR", "Socket closed!");
+                                error = true;
+                            }
                         }
                     }
-                    fileOutputStream.close();
+                    inputStream.close();
                 } else {
-                    while ((bytesRead = inputStream.read(buffer)) != -1 && !error) {
-                        try {
-                            res.write(buffer, 0, bytesRead);
-                        } catch (SocketException e) {
-                            Log.d("VIBE ERROR", "Socket closed!");
-                            error = true;
-                        }
-                    }
+                    Log.d("VIBE", "No file to download. Server replied HTTP code: " + responseCode + " " + urlConnection.getResponseMessage() + " " + accessToken);
                 }
-                inputStream.close();
-            } else {
-                Log.d("VIBE", "No file to download. Server replied HTTP code: " + responseCode);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                assert urlConnection != null;
+                urlConnection.disconnect();
             }
-        } catch (Exception e) {
+        } catch (JSONException e) {
             e.printStackTrace();
-        } finally {
-            assert urlConnection != null;
-            urlConnection.disconnect();
         }
+
     }
 
     protected void printHeader(PrintWriter pw, String key, String value) {

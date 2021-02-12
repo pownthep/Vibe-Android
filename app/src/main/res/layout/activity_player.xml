@@ -132,7 +132,7 @@
             android:shadowColor="@android:color/black"
             android:paddingLeft="60dp"
             android:paddingRight="60dp"
-            android:maxLines="1"
+            android:singleLine="true"
             android:text="@string/title"
             android:textColor="@android:color/white"
             android:textSize="14sp"
@@ -204,7 +204,7 @@
                     android:textSize="20sp"
                     android:paddingLeft="7dp"
                     android:paddingRight="7dp"
-                    android:maxLines="1"
+                    android:singleLine="true"
                     android:textStyle="bold"
                     android:text="Title" />
 
@@ -213,7 +213,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="1dp"
-                    android:maxLines="1"
+                    android:singleLine="true"
                     android:textSize="10sp"
                     android:paddingLeft="9dp"
                     android:paddingRight="9dp"
@@ -224,7 +224,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="1dp"
-                    android:maxLines="1"
+                    android:singleLine="true"
                     android:textSize="10sp"
                     android:paddingLeft="9dp"
                     android:paddingRight="9dp"
@@ -237,7 +237,7 @@
                     android:layout_margin="1dp"
                     android:textSize="10sp"
                     android:paddingLeft="9dp"
-                    android:maxLines="1"
+                    android:singleLine="true"
                     android:paddingRight="9dp"
                     android:text="Rating: " />
             </LinearLayout>
@@ -269,7 +269,7 @@
                 android:layout_height="wrap_content"
                 android:imeOptions="actionDone"
                 android:inputType="textImeMultiLine"
-                android:maxLines="1" />
+                android:singleLine="true" />
 
         </com.google.android.material.textfield.TextInputLayout>
 

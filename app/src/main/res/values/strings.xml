@@ -29,4 +29,5 @@
     <string name="reload_text">Reload the catalogue to get latest shows.</string>
     <string name="go_back_to_previous_activity">go back to previous activity</string>
     <string name="reset_user_data">Restore to default</string>
+    <string name="server_client_id">511377925028-ar09unh2rtfs8h0vh2u08p8nn4i9plqm.apps.googleusercontent.com</string>
 </resources>
